@@ -1,0 +1,2 @@
+pyparsing==2.1.10
+selenium==3.0.1
