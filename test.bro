@@ -1,12 +1,14 @@
 # Comment line
 
-meta screen_size 500,500
+init browser chrome
+init private
+
+meta screen_size 1000, 1000
 meta user_agent 'blah blah'
-meta browser chrome
 
-goto 'http://google.com'
+goto 'http://erickever.com'
 
-wait 0.01 # Comment after expression
+wait 20 # Comment after expression
 
 click 10,20
 click + 10,20
@@ -14,11 +16,13 @@ click 'ul li .test'
 
 mouse 10,20
 mouse + 10,20
-mouse 'ul li .test'
+mouse '.html5'
 
 scroll 10,20
 scroll - 10,20
 scroll 'ul li .test'[0]
+
+wait 20
 
 back 3
 forward 3
