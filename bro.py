@@ -4,6 +4,7 @@ import inspect
 import sys
 import atexit
 import timeit
+import re
 
 from pyparsing import (
     Word,
@@ -109,6 +110,7 @@ class BroLang():
     """
 
     point = Literal('.')
+    bang = Literal('!')
     comma = Literal(',').suppress()
     lsquare = Literal('[').suppress()
     rsquare = Literal(']').suppress()
@@ -143,6 +145,7 @@ class BroLang():
     scroll_kw = CaselessKeyword('scroll')
     back_kw = CaselessKeyword('back')
     forward_kw = CaselessKeyword('forward')
+    assert_kw = CaselessKeyword('assert')
 
     init_private_expr = CaselessKeyword('private')
     init_browser_expr = CaselessKeyword('browser') + Word(alphanums + '.')
@@ -161,6 +164,17 @@ class BroLang():
     back_expr = Group(back_kw + Optional(pos_int))
     forward_expr = Group(forward_kw + Optional(pos_int))
 
+    assert_content = CaselessKeyword('content')
+    assert_exists = CaselessKeyword('exists')
+    assert_nexists = CaselessKeyword('nexists')
+    assert_content_exists = (
+        assert_content +
+        (assert_exists | assert_nexists) +
+        Optional(bang) +
+        qstring
+    )
+    assert_expr = Group(assert_kw + assert_content_exists)
+
     def bnf(self):
         expr = (
             self.comment.suppress() |
@@ -170,6 +184,7 @@ class BroLang():
             self.wait_expr + Optional(self.comment).suppress() |
             self.back_expr + Optional(self.comment).suppress() |
             self.forward_expr + Optional(self.comment).suppress() |
+            self.assert_expr + Optional(self.comment).suppress() |
             self.click() + Optional(self.comment).suppress() |
             self.mouse() + Optional(self.comment).suppress() |
             self.scroll() + Optional(self.comment).suppress()
@@ -287,6 +302,8 @@ class Bro():
             self.back(*args)
         elif action == 'forward':
             self.forward(*args)
+        elif action == 'assert':
+            self.assertions(args)
         elif action in self._positional_actions:
             self._execute_positional(action, args)
         else:
@@ -341,6 +358,32 @@ class Bro():
         for i in range(int(num)):
             self._browser.forward()
         self._print_perf_info('forward', start, int(num))
+
+    def assertions(self, t):
+        if t[0] == 'content':
+
+            if t[1] == 'exists' or t[1] == 'nexists':
+                args = re.IGNORECASE
+                content = t[2]
+
+                if t[2] == '!':
+                    args = None
+                    content = t[3]
+
+                getattr(self, 'assert_content_' + t[1])(content, args)
+        else:
+            pass
+
+    def assert_content_exists(self, content, ignore):
+        if ignore is None:
+            exists = re.search(content, self._browser.page_source)
+            print('NoIgnore', exists)
+        else:
+            exists = re.search(content, self._browser.page_source, re.IGNORECASE)
+            print('Ignore', exists)
+
+    def assert_content_nexists(self, content, ignore):
+        print('assert_content_nexists', content, ignore)
 
     def _get_element(self, sel):
         el = self._browser.find_elements_by_css_selector(sel.__str__())
