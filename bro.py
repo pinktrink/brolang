@@ -119,7 +119,6 @@ class BroLang():
     """
 
     point = Literal('.')
-    bang = Literal('!')
     comma = Literal(',').suppress()
     lsquare = Literal('[').suppress()
     rsquare = Literal(']').suppress()
@@ -141,9 +140,18 @@ class BroLang():
     # unit = Group(number + unit_suf).setParseAction(defaultPixel)
     unit = number
     qstring = QuotedString("'", escChar='\\') | QuotedString('"', escChar='\\')
+    regex_ignore_case = Literal('i')
+    regex_dotall = Literal('s')
+    regex_locale = Literal('l')
+    regex_unicode = Literal('u')
+    regex = Group(QuotedString('/', escChar='\\') + Group(ZeroOrMore(
+        regex_ignore_case | regex_dotall | regex_locale | regex_unicode
+    )))
     comment = Literal('#') + SkipTo(LineEnd()) + LineEnd()
     listget = lsquare + Word(nums) + rsquare
-    select_expr = Group(qstring + Optional(listget)).setParseAction(getSelector)
+    select_expr = Group(
+        qstring + Optional(listget)
+    ).setParseAction(getSelector)
 
     init_kw = CaselessKeyword('init')
     meta_kw = CaselessKeyword('meta')
@@ -175,14 +183,36 @@ class BroLang():
 
     assert_content = CaselessKeyword('content')
     assert_exists = CaselessKeyword('exists')
-    assert_nexists = CaselessKeyword('nexists')
-    assert_content_exists = (
+    assert_absent = CaselessKeyword('absent')
+    assert_content_exists_expr = (
         assert_content +
-        (assert_exists | assert_nexists) +
-        Optional(bang) +
+        (assert_exists | assert_absent) +
+        regex
+    )
+    assert_source = CaselessKeyword('source')
+    assert_source_exists_expr = (
+        assert_source +
+        (assert_exists | assert_absent) +
+        regex
+    )
+    assert_element = CaselessKeyword('element')
+    assert_element_visible = CaselessKeyword('visible')
+    assert_element_hidden = CaselessKeyword('hidden')
+    assert_element_visible_expr = (
+        assert_element +
+        (assert_element_visible | assert_element_hidden) +
         qstring
     )
-    assert_expr = Group(assert_kw + assert_content_exists)
+    assert_alert = CaselessKeyword('alert')
+    assert_alert_exists_expr = (
+        assert_alert + (assert_exists | assert_absent)
+    )
+    assert_expr = Group(assert_kw + (
+        assert_content_exists_expr |
+        assert_source_exists_expr |
+        assert_element_visible_expr |
+        assert_alert_exists_expr
+    ))
 
     def bnf(self):
         expr = (
