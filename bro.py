@@ -222,6 +222,11 @@ class BroLang():
     ))
 
     def bnf(self):
+        '''
+        Return the psuedo Backus-Naur form that will be used to represent
+        the language grammar.
+        '''
+
         expr = (
             self.comment.suppress() |
             self.init_expr + Optional(self.comment).suppress() |
@@ -241,6 +246,13 @@ class BroLang():
         return bnf
 
     def _positional_statement(self, kw):
+        '''
+        Define a portion of grammar that will be positional. If a
+        portion of the grammar can accept absolute position, relative
+        position, or selector position, this method will allow it to
+        accept all three.
+        '''
+
         abs_expr = Group(
             kw + Group(
                 self.pos_unit + self.comma.suppress() + self.pos_unit
@@ -256,14 +268,26 @@ class BroLang():
         return abs_expr | rel_expr | sel_expr
 
     def click(self):
+        '''
+        Define the click grammar.
+        '''
+
         click = CaselessKeyword('click')
         return self._positional_statement(click)
 
     def mouse(self):
+        '''
+        Define the mouse grammar.
+        '''
+
         mouse = CaselessKeyword('mouse')
         return self._positional_statement(mouse)
 
     def scroll(self):
+        '''
+        Define the scroll grammar.
+        '''
+
         scroll = CaselessKeyword('scroll')
         return self._positional_statement(scroll)
 
@@ -284,12 +308,25 @@ class Bro():
     _clean = True
 
     def is_clean(self):
+        '''
+        Return whether or not a clean exit can be made.
+        '''
+
         return self._clean
 
     def _exit_browser(self):
+        '''
+        Perform any necessary steps to allow a clean exit.
+        '''
+
         self._browser.quit()
 
     def _set_browser(self):
+        '''
+        Set the browser, if it hasn't been set yet.
+        '''
+
+
         if not self._browser:
             try:
                 br = self._brname[0].upper() + self._brname[1:].lower()
@@ -334,6 +371,10 @@ class Bro():
                 sys.exit(1)
 
     def _print_perf_info(self, cmd, start, *args):
+        '''
+        Print performance information for a given command.
+        '''
+
         print(
             cmd,
             *args,  # Error in Vim, unsure why.
@@ -341,6 +382,11 @@ class Bro():
         )
 
     def _execute_positional(self, action, args):
+        '''
+        Execute a positional grammar statement based on whether or not it's
+        relative, a selector, or absolute.
+        '''
+
         if args[0] == '+':
             getattr(self, action + '_rel')(*args[1])
         elif args[0] == '-':
@@ -352,6 +398,10 @@ class Bro():
             getattr(self, action + '_abs')(*args[0])
 
     def execute(self, t):
+        '''
+        Execute a statement.
+        '''
+
         action, args = (t[0], t[1:])
 
         if action == 'init':
@@ -374,6 +424,10 @@ class Bro():
             print('unknown action', action)
 
     def init(self, t):
+        '''
+        Execute an init statement.
+        '''
+
         if t[0] == 'browser':
             self._brname = t[1]
         elif t[0] == 'private':
@@ -382,32 +436,56 @@ class Bro():
             self._user_agent = t[1]
 
     def meta(self, t):
+        '''
+        Execute a meta statement.
+        '''
+
         if t[0] == 'screen_size':
             self.screen_size(*t[1][0:])
 
     def screen_size(self, x, y):
+        '''
+        Execute a meta screen_size statement.
+        '''
+
         start = timeit.default_timer()
         self._set_browser()
         self._browser.set_window_size(x, y)
         self._print_perf_info('screen_size', start, x, y)
 
     def user_agent(self, ua):
+        '''
+        Execute an init user_agent statement.
+        '''
+
         start = timeit.default_timer()
         self._set_browser()
         self._print_perf_info('user_agent', start, ua)
 
     def wait(self, t):
+        '''
+        Execute a wait statement.
+        '''
+
         start = timeit.default_timer()
         time.sleep(t)
         self._print_perf_info('sleep', start, t)
 
     def goto(self, href):
+        '''
+        Execute a goto statement.
+        '''
+
         start = timeit.default_timer()
         self._set_browser()
         self._browser.get(href)
         self._print_perf_info('goto', start, href)
 
     def back(self, num=1):
+        '''
+        Execute a back statement.
+        '''
+
         start = timeit.default_timer()
         self._set_browser()
         for i in range(int(num)):
@@ -415,6 +493,10 @@ class Bro():
         self._print_perf_info('back', start, int(num))
 
     def forward(self, num=1):
+        '''
+        Execute a forward statement.
+        '''
+
         start = timeit.default_timer()
         self._set_browser()
         for i in range(int(num)):
@@ -422,6 +504,11 @@ class Bro():
         self._print_perf_info('forward', start, int(num))
 
     def _reduce_regex_args(self, regex):
+        '''
+        Reduce regex arguments to a tuple, tuple[0] being the regex to
+        compare against, tuple[1] being the flags for the regex.
+        '''
+
         content = regex[0]
         flags = 0
 
@@ -431,6 +518,10 @@ class Bro():
         return (content, flags)
 
     def assertions(self, t):
+        '''
+        Execute an assert statement.
+        '''
+
         if t[0] == 'content':
             start = timeit.default_timer()
             args = self._reduce_regex_args(t[1])
@@ -489,6 +580,12 @@ class Bro():
             pass
 
     def assert_content_present(self, content, flags, in_el=None):
+        '''
+        Execute an assert content /x/ present (in 'selector'([x]))
+        statement.
+        '''
+
+
         if in_el is None:
             in_el = CSSSelector('body', 0)
 
@@ -500,6 +597,11 @@ class Bro():
         return True
 
     def assert_content_absent(self, content, flags, in_el=None):
+        '''
+        Execute an assert content /x/ absent (in 'selector'([x]))
+        statement.
+        '''
+
         if in_el is None:
             in_el = CSSSelector('body', 0)
 
@@ -511,6 +613,10 @@ class Bro():
         return True
 
     def assert_source_present(self, content, flags):
+        '''
+        Execute an assert source /x/ present statement.
+        '''
+
         match = re.search(content, self._browser.page_source, flags)
         if not bool(match):
             self._clean = False
@@ -519,6 +625,10 @@ class Bro():
         return True
 
     def assert_source_absent(self, content, flags):
+        '''
+        Execute an assert source /x/ absent statement.
+        '''
+
         match = re.search(content, self._browser.page_source, flags)
         if bool(match):
             self._clean = False
@@ -527,6 +637,10 @@ class Bro():
         return True
 
     def assert_alert_present(self):
+        '''
+        Execute an assert alert present statement.
+        '''
+
         alert = expected_conditions.alert_is_present()(self._browser)
         if not alert:
             self._clean = False
@@ -535,6 +649,10 @@ class Bro():
         return True
 
     def assert_alert_absent(self):
+        '''
+        Execute an assert alert absent statement.
+        '''
+
         alert = expected_conditions.alert_is_present()(self._browser)
         if alert:
             self._clean = False
@@ -543,9 +661,17 @@ class Bro():
         return True
 
     def _get_bs(self):
+        '''
+        Get the BeautifulSoup object for the current page source.
+        '''
+
         return BeautifulSoup(self._browser.page_source, 'html.parser')
 
     def _get_element(self, sel):
+        '''
+        Get a selenium representation of an element.
+        '''
+
         el = self._browser.find_elements_by_css_selector(str(sel))
 
         if len(el) == 0:
@@ -560,6 +686,10 @@ class Bro():
             return el[sel.get]
 
     def _get_element_content(self, sel):
+        '''
+        Get a BeautifulSoup representation of an element.
+        '''
+
         bs = self._get_bs()
 
         els = bs.find_all(str(sel))
@@ -570,6 +700,10 @@ class Bro():
         return self._get_bs_element_content(els)
 
     def _get_bs_element_content(self, els):
+        '''
+        Get an element's content only, without tags.
+        '''
+
         content = ''
 
         for el in els:
@@ -585,41 +719,77 @@ class Bro():
         return content
 
     def click_rel(self, x, y):
+        '''
+        Execute a relative click statement.
+        '''
+
         start = timeit.default_timer()
         self._print_perf_info('click_rel', start, x, y)
 
     def click_sel(self, sel):
+        '''
+        Execute a selector click statement.
+        '''
+
         start = timeit.default_timer()
         self._print_perf_info('click_sel', start, sel)
 
     def click_abs(self, x, y):
+        '''
+        Execute an absolute click statement.
+        '''
+
         start = timeit.default_timer()
         self._print_perf_info('click_abs', start, x, y)
 
     def mouse_rel(self, x, y):
+        '''
+        Execute a relative mouse statement.
+        '''
+
         start = timeit.default_timer()
         self._print_perf_info('mouse_rel', start, x, y)
 
     def mouse_sel(self, sel):
+        '''
+        Execute a selector mouse statement.
+        '''
+
         start = timeit.default_timer()
         el = self._get_element(sel)
         self._action.move_to_element(el).perform()
         self._print_perf_info('mouse_sel', start, sel)
 
     def mouse_abs(self, x, y):
+        '''
+        Execute an absolute mouse statement.
+        '''
+
         start = timeit.default_timer()
         self._action.move_by_offset(x, y).perform()
         self._print_perf_info('mouse_abs', start, x, y)
 
     def scroll_rel(self, x, y):
+        '''
+        Execute a relative scroll statement.
+        '''
+
         start = timeit.default_timer()
         self._print_perf_info('scroll_rel', start, x, y)
 
     def scroll_sel(self, sel):
+        '''
+        Execute a selector scroll statement.
+        '''
+
         start = timeit.default_timer()
         self._print_perf_info('scroll_sel', start, sel)
 
     def scroll_abs(self, x, y):
+        '''
+        Execute an absolute scroll statement.
+        '''
+
         start = timeit.default_timer()
         self._print_perf_info('scroll_abs', start, x, y)
 
