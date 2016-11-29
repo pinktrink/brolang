@@ -187,14 +187,14 @@ class BroLang():
     assert_absent = CaselessKeyword('absent')
     assert_content_present_expr = (
         assert_content +
-        (assert_present | assert_absent) +
-        regex
+        regex +
+        (assert_present | assert_absent)
     )
     assert_source = CaselessKeyword('source')
     assert_source_present_expr = (
         assert_source +
-        (assert_present | assert_absent) +
-        regex
+        regex +
+        (assert_present | assert_absent)
     )
     assert_element = CaselessKeyword('element')
     assert_element_visible = CaselessKeyword('visible')
@@ -416,34 +416,34 @@ class Bro():
     def assertions(self, t):
         if t[0] == 'content':
             start = timeit.default_timer()
-            args = self._reduce_regex_args(t[2])
+            args = self._reduce_regex_args(t[1])
             res = True
 
-            if t[1] == 'present':
+            if t[2] == 'present':
                 res = self.assert_content_present(*args)
-            elif t[1] == 'absent':
+            elif t[2] == 'absent':
                 res = self.assert_content_absent(*args)
 
             self._print_perf_info(
-                'assert content ' + t[1],
+                'assert content ' + '/' + args[0] + '/' + ''.join(t[1][1]),
                 start,
-                '/' + args[0] + '/' + ''.join(t[2][1]),
+                t[2],
                 'passed' if res is True else 'failed'
             )
         elif t[0] == 'source':
             start = timeit.default_timer()
-            args = self._reduce_regex_args(t[2])
+            args = self._reduce_regex_args(t[1])
             res = True
 
-            if t[1] == 'present':
+            if t[2] == 'present':
                 res = self.assert_source_present(*args)
-            elif t[1] == 'absent':
+            elif t[2] == 'absent':
                 res = self.assert_source_absent(*args)
 
             self._print_perf_info(
-                'assert content ' + t[1],
+                'assert content ' + '/' + args[0] + '/' + ''.join(t[1][1]),
                 start,
-                '/' + args[0] + '/' + ''.join(t[2][1]),
+                t[2],
                 'passed' if res is True else 'failed'
             )
         elif t[0] == 'alert':
