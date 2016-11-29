@@ -338,7 +338,7 @@ class Bro():
                         opts.add_argument('--incognito')
 
                     if self._user_agent is not None:
-                        pass
+                        opts.add_argument('--user-agent=' + self._user_agent)
 
                     self._browser = wd.Chrome(chrome_options=opts)
                 elif br == 'Firefox':
