@@ -559,26 +559,6 @@ class Bro():
         else:
             return el[sel.get]
 
-    # def _get_element_content(self, sel):
-    #     bs = self._get_bs()
-
-    #     els = bs.find_all(str(sel))
-
-    #     # if len(els) == 0:
-    #     #     raise 'no element for selector ' + sel
-
-    #     for el in els:
-    #         content = ''
-
-    #         for c in el.contents:
-    #             if not isinstance(c, NavigableString):
-    #                 c = self._get_element_content(c)
-
-    #             content += str(c)
-    #             el.replace_with(BeautifulSoup(content))
-
-    #     return bs
-
     def _get_element_content(self, sel):
         bs = self._get_bs()
 
