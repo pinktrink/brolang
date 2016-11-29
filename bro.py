@@ -361,6 +361,9 @@ class Bro():
                     if self._private:
                         print('private browsing is not supported for', br)
 
+                    if self._user_agent:
+                        print('user agent is not supported for', br)
+
                     self._browser = getattr(wd, br)()
 
                 self._action = ActionChains(self._browser)
