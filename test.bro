@@ -2,9 +2,9 @@
 
 init browser chrome
 init private
+init user_agent 'blah blah'
 
 meta screen_size 1000, 1000
-meta user_agent 'blah blah'
 
 goto 'http://erickever.com'
 

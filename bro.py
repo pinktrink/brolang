@@ -168,13 +168,16 @@ class BroLang():
 
     init_private_expr = CaselessKeyword('private')
     init_browser_expr = CaselessKeyword('browser') + Word(alphanums + '.')
-    init_expr = Group(init_kw + (init_private_expr | init_browser_expr))
+    init_ua_expr = CaselessKeyword('user_agent') + qstring
+    init_expr = Group(init_kw + (
+        init_private_expr |
+        init_browser_expr |
+        init_ua_expr
+    ))
 
     meta_screen = CaselessKeyword('screen_size')
     meta_screen_expr = meta_screen + Group(pos_number + comma + pos_number)
-    meta_ua = CaselessKeyword('user_agent')
-    meta_ua_expr = meta_ua + qstring
-    meta_expr = Group(meta_kw + (meta_screen_expr | meta_ua_expr))
+    meta_expr = Group(meta_kw + meta_screen_expr)
 
     goto_expr = Group(goto_kw + qstring)
 
@@ -276,6 +279,7 @@ class Bro():
     _browser = None
     _action = None
     _brname = DEFAULT_BROWSER
+    _user_agent = None
     _private = False
     _clean = True
 
@@ -290,24 +294,36 @@ class Bro():
             try:
                 br = self._brname[0].upper() + self._brname[1:].lower()
 
-                if self._private:
-                    if br == 'Chrome':
-                        opts = wd.ChromeOptions()
+                if br == 'Chrome':
+                    opts = wd.ChromeOptions()
+
+                    if self._private:
                         opts.add_argument('--incognito')
 
-                        self._browser = wd.Chrome(chrome_options=opts)
-                    elif br == 'Firefox':
-                        opts = wd.FirefoxProfile()
+                    if self._user_agent is not None:
+                        pass
+
+                    self._browser = wd.Chrome(chrome_options=opts)
+                elif br == 'Firefox':
+                    opts = wd.FirefoxProfile()
+
+                    if self._private:
                         opts.set_preference(
                             'browser.privatebrowsing.autostart',
                             True
                         )
 
-                        self._browser = wd.Firefox(firefox_profile=opts)
-                    else:
-                        print('private browsing is not supperted for', br)
-                        self._browser = getattr(wd, br)()
+                    if self._user_agent is not None:
+                        opts.set_preference(
+                            'general.useragent.override',
+                            self._user_agent
+                        )
+
+                    self._browser = wd.Firefox(firefox_profile=opts)
                 else:
+                    if self._private:
+                        print('private browsing is not supported for', br)
+
                     self._browser = getattr(wd, br)()
 
                 self._action = ActionChains(self._browser)
@@ -362,14 +378,12 @@ class Bro():
             self._brname = t[1]
         elif t[0] == 'private':
             self._private = True
+        elif t[0] == 'user_agent':
+            self._user_agent = t[1]
 
     def meta(self, t):
         if t[0] == 'screen_size':
             self.screen_size(*t[1][0:])
-        elif t[0] == 'user_agent':
-            self.user_agent(t[1])
-        elif t[0] == 'browser':
-            self.browser(t[1])
 
     def screen_size(self, x, y):
         start = timeit.default_timer()
