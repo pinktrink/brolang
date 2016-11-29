@@ -29,6 +29,7 @@ from selenium import webdriver as wd
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support import expected_conditions
+from bs4 import BeautifulSoup, NavigableString
 
 
 DEFAULT_BROWSER = 'Chrome'
@@ -185,10 +186,12 @@ class BroLang():
     assert_content = CaselessKeyword('content')
     assert_present = CaselessKeyword('present')
     assert_absent = CaselessKeyword('absent')
+    assert_in = CaselessKeyword('in')
     assert_content_present_expr = (
         assert_content +
         regex +
-        (assert_present | assert_absent)
+        (assert_present | assert_absent) +
+        Optional(assert_in + select_expr)
     )
     assert_source = CaselessKeyword('source')
     assert_source_present_expr = (
@@ -417,17 +420,24 @@ class Bro():
         if t[0] == 'content':
             start = timeit.default_timer()
             args = self._reduce_regex_args(t[1])
+            kwargs = {}
             res = True
 
+            try:
+                t[3]
+                kwargs['in_el'] = t[4]
+            except IndexError:
+                pass
+
             if t[2] == 'present':
-                res = self.assert_content_present(*args)
+                res = self.assert_content_present(*args, **kwargs)
             elif t[2] == 'absent':
-                res = self.assert_content_absent(*args)
+                res = self.assert_content_absent(*args, **kwargs)
 
             self._print_perf_info(
                 'assert content ' + '/' + args[0] + '/' + ''.join(t[1][1]),
                 start,
-                t[2],
+                t[2] + (' in ' + str(kwargs['in_el']) if kwargs else ''),
                 'passed' if res is True else 'failed'
             )
         elif t[0] == 'source':
@@ -464,16 +474,22 @@ class Bro():
         else:
             pass
 
-    def assert_content_present(self, content, flags):
-        match = re.search(content, self._browser.page_source, flags)
+    def assert_content_present(self, content, flags, in_el=None):
+        if in_el is None:
+            in_el = CSSSelector('body', 0)
+
+        match = re.search(content, self._get_element_content(in_el), flags)
         if not bool(match):
             self._clean = False
             return False
 
         return True
 
-    def assert_content_absent(self, content, flags):
-        match = re.search(content, self._browser.page_source, flags)
+    def assert_content_absent(self, content, flags, in_el=None):
+        if in_el is None:
+            in_el = CSSSelector('body', 0)
+
+        match = re.search(content, self._get_element_content(in_el), flags)
         if bool(match):
             self._clean = False
             return False
@@ -512,8 +528,11 @@ class Bro():
 
         return True
 
+    def _get_bs(self):
+        return BeautifulSoup(self._browser.page_source, 'html.parser')
+
     def _get_element(self, sel):
-        el = self._browser.find_elements_by_css_selector(sel.__str__())
+        el = self._browser.find_elements_by_css_selector(str(sel))
 
         if len(el) == 0:
             raise 'no element for selector ' + sel
@@ -525,6 +544,51 @@ class Bro():
                 raise 'you must iterate through a list of elements or use [x]'
         else:
             return el[sel.get]
+
+    # def _get_element_content(self, sel):
+    #     bs = self._get_bs()
+
+    #     els = bs.find_all(str(sel))
+
+    #     # if len(els) == 0:
+    #     #     raise 'no element for selector ' + sel
+
+    #     for el in els:
+    #         content = ''
+
+    #         for c in el.contents:
+    #             if not isinstance(c, NavigableString):
+    #                 c = self._get_element_content(c)
+
+    #             content += str(c)
+    #             el.replace_with(BeautifulSoup(content))
+
+    #     return bs
+
+    def _get_element_content(self, sel):
+        bs = self._get_bs()
+
+        els = bs.find_all(str(sel))
+
+        if len(els) == 0:
+            raise 'no element for selector ' + sel
+
+        return self._get_bs_element_content(els)
+
+    def _get_bs_element_content(self, els):
+        content = ''
+
+        for el in els:
+            if not isinstance(el, NavigableString):
+                for c in el.contents:
+                    if not isinstance(c, NavigableString):
+                        content += self._get_bs_element_content(c)
+                    else:
+                        content += c
+            else:
+                content += el
+
+        return content
 
     def click_rel(self, x, y):
         start = timeit.default_timer()
