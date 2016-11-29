@@ -183,17 +183,17 @@ class BroLang():
     forward_expr = Group(forward_kw + Optional(pos_int))
 
     assert_content = CaselessKeyword('content')
-    assert_exists = CaselessKeyword('exists')
+    assert_present = CaselessKeyword('present')
     assert_absent = CaselessKeyword('absent')
-    assert_content_exists_expr = (
+    assert_content_present_expr = (
         assert_content +
-        (assert_exists | assert_absent) +
+        (assert_present | assert_absent) +
         regex
     )
     assert_source = CaselessKeyword('source')
-    assert_source_exists_expr = (
+    assert_source_present_expr = (
         assert_source +
-        (assert_exists | assert_absent) +
+        (assert_present | assert_absent) +
         regex
     )
     assert_element = CaselessKeyword('element')
@@ -205,14 +205,14 @@ class BroLang():
         qstring
     )
     assert_alert = CaselessKeyword('alert')
-    assert_alert_exists_expr = (
-        assert_alert + (assert_exists | assert_absent)
+    assert_alert_present_expr = (
+        assert_alert + (assert_present | assert_absent)
     )
     assert_expr = Group(assert_kw + (
-        assert_content_exists_expr |
-        assert_source_exists_expr |
+        assert_content_present_expr |
+        assert_source_present_expr |
         assert_element_visible_expr |
-        assert_alert_exists_expr
+        assert_alert_present_expr
     ))
 
     def bnf(self):
@@ -419,8 +419,8 @@ class Bro():
             args = self._reduce_regex_args(t[2])
             res = True
 
-            if t[1] == 'exists':
-                res = self.assert_content_exists(*args)
+            if t[1] == 'present':
+                res = self.assert_content_present(*args)
             elif t[1] == 'absent':
                 res = self.assert_content_absent(*args)
 
@@ -435,8 +435,8 @@ class Bro():
             args = self._reduce_regex_args(t[2])
             res = True
 
-            if t[1] == 'exists':
-                res = self.assert_source_exists(*args)
+            if t[1] == 'present':
+                res = self.assert_source_present(*args)
             elif t[1] == 'absent':
                 res = self.assert_source_absent(*args)
 
@@ -450,8 +450,8 @@ class Bro():
             start = timeit.default_timer()
             res = True
 
-            if t[1] == 'exists':
-                res = self.assert_alert_exists()
+            if t[1] == 'present':
+                res = self.assert_alert_present()
             elif t[1] == 'absent':
                 res = self.assert_alert_absent()
 
@@ -464,7 +464,7 @@ class Bro():
         else:
             pass
 
-    def assert_content_exists(self, content, flags):
+    def assert_content_present(self, content, flags):
         match = re.search(content, self._browser.page_source, flags)
         if not bool(match):
             self._clean = False
@@ -480,7 +480,7 @@ class Bro():
 
         return True
 
-    def assert_source_exists(self, content, flags):
+    def assert_source_present(self, content, flags):
         match = re.search(content, self._browser.page_source, flags)
         if not bool(match):
             self._clean = False
@@ -496,7 +496,7 @@ class Bro():
 
         return True
 
-    def assert_alert_exists(self):
+    def assert_alert_present(self):
         alert = expected_conditions.alert_is_present()(self._browser)
         if not alert:
             self._clean = False

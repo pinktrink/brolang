@@ -28,9 +28,9 @@ wait 5
 # forward 3
 # back
 
-assert content exists /eric kever/i
+assert content present /eric kever/i
 assert content absent /mr poopy butthole/
-assert source exists /<div>/
+assert source present /<div>/
 assert source absent /<oogabooga>/i
 
 assert alert absent
