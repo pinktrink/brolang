@@ -28,6 +28,7 @@ from pyparsing import (
 from selenium import webdriver as wd
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.support import expected_conditions
 
 
 DEFAULT_BROWSER = 'Chrome'
@@ -273,6 +274,10 @@ class Bro():
     _action = None
     _brname = DEFAULT_BROWSER
     _private = False
+    _clean = True
+
+    def is_clean(self):
+        return self._clean
 
     def _exit_browser(self):
         self._browser.quit()
@@ -399,31 +404,113 @@ class Bro():
             self._browser.forward()
         self._print_perf_info('forward', start, int(num))
 
+    def _reduce_regex_args(self, regex):
+        content = regex[0]
+        flags = 0
+
+        for flag in set(regex[1]):
+            flags = flags | getattr(re, flag.upper())
+
+        return (content, flags)
+
     def assertions(self, t):
         if t[0] == 'content':
+            start = timeit.default_timer()
+            args = self._reduce_regex_args(t[2])
+            res = True
 
-            if t[1] == 'exists' or t[1] == 'nexists':
-                args = re.IGNORECASE
-                content = t[2]
+            if t[1] == 'exists':
+                res = self.assert_content_exists(*args)
+            elif t[1] == 'absent':
+                res = self.assert_content_absent(*args)
 
-                if t[2] == '!':
-                    args = None
-                    content = t[3]
+            self._print_perf_info(
+                'assert content ' + t[1],
+                start,
+                '/' + args[0] + '/' + ''.join(t[2][1]),
+                'passed' if res is True else 'failed'
+            )
+        elif t[0] == 'source':
+            start = timeit.default_timer()
+            args = self._reduce_regex_args(t[2])
+            res = True
 
-                getattr(self, 'assert_content_' + t[1])(content, args)
+            if t[1] == 'exists':
+                res = self.assert_source_exists(*args)
+            elif t[1] == 'absent':
+                res = self.assert_source_absent(*args)
+
+            self._print_perf_info(
+                'assert content ' + t[1],
+                start,
+                '/' + args[0] + '/' + ''.join(t[2][1]),
+                'passed' if res is True else 'failed'
+            )
+        elif t[0] == 'alert':
+            start = timeit.default_timer()
+            res = True
+
+            if t[1] == 'exists':
+                res = self.assert_alert_exists()
+            elif t[1] == 'absent':
+                res = self.assert_alert_absent()
+
+            self._print_perf_info(
+                'assert alert ' + t[1],
+                start,
+                'passed' if res is True else 'failed'
+            )
+
         else:
             pass
 
-    def assert_content_exists(self, content, ignore):
-        if ignore is None:
-            exists = re.search(content, self._browser.page_source)
-            print('NoIgnore', exists)
-        else:
-            exists = re.search(content, self._browser.page_source, re.IGNORECASE)
-            print('Ignore', exists)
+    def assert_content_exists(self, content, flags):
+        match = re.search(content, self._browser.page_source, flags)
+        if not bool(match):
+            self._clean = False
+            return False
 
-    def assert_content_nexists(self, content, ignore):
-        print('assert_content_nexists', content, ignore)
+        return True
+
+    def assert_content_absent(self, content, flags):
+        match = re.search(content, self._browser.page_source, flags)
+        if bool(match):
+            self._clean = False
+            return False
+
+        return True
+
+    def assert_source_exists(self, content, flags):
+        match = re.search(content, self._browser.page_source, flags)
+        if not bool(match):
+            self._clean = False
+            return False
+
+        return True
+
+    def assert_source_absent(self, content, flags):
+        match = re.search(content, self._browser.page_source, flags)
+        if bool(match):
+            self._clean = False
+            return False
+
+        return True
+
+    def assert_alert_exists(self):
+        alert = expected_conditions.alert_is_present()(self._browser)
+        if not alert:
+            self._clean = False
+            return False
+
+        return True
+
+    def assert_alert_absent(self):
+        alert = expected_conditions.alert_is_present()(self._browser)
+        if alert:
+            self._clean = False
+            return False
+
+        return True
 
     def _get_element(self, sel):
         el = self._browser.find_elements_by_css_selector(sel.__str__())
@@ -482,3 +569,4 @@ b = Bro()
 for stmt in BroLang().bnf().parseFile('test.bro'):
     b.execute(stmt)
 
+sys.exit(int(not b.is_clean()))
