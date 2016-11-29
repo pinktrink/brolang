@@ -32,24 +32,31 @@ from selenium.common.exceptions import WebDriverException
 
 DEFAULT_BROWSER = 'Chrome'
 
+
 def convertFloat(t):
     return float(t[0])
+
 
 def convertInt(t):
     return int(t[0])
 
+
 def defaultPixel(t):
     return CSSUnit(*t[0])
 
+
 def getSelector(t):
     return CSSSelector(*t[0])
+
 
 # def negateUnit(unit):
 #     unit.num = -unit.num
 #     return unit
 
+
 def negateUnit(unit):
     return -unit
+
 
 # class CSSUnit():
 #     """
@@ -75,6 +82,7 @@ def negateUnit(unit):
 #     def __str__(self):
 #         return self.__repr__()
 
+
 class CSSSelector():
     """
     Deals with CSS selectors and getting individual items from a list of
@@ -99,6 +107,7 @@ class CSSSelector():
 
     def __str__(self):
         return self.selector
+
 
 class BroLang():
     """
@@ -220,6 +229,7 @@ class BroLang():
     def scroll(self):
         scroll = CaselessKeyword('scroll')
         return self._positional_statement(scroll)
+
 
 class Bro():
     """
@@ -441,3 +451,4 @@ class Bro():
 b = Bro()
 for stmt in BroLang().bnf().parseFile('test.bro'):
     b.execute(stmt)
+
