@@ -29,6 +29,7 @@ from selenium import webdriver as wd
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup, NavigableString
 
 
@@ -181,7 +182,17 @@ class BroLang():
 
     goto_expr = Group(goto_kw + qstring)
 
-    wait_expr = Group(wait_kw + pos_number)
+    wait_until = CaselessKeyword('until')
+    wait_appears = CaselessKeyword('appears')
+    wait_disappears = CaselessKeyword('disappears')
+    wait_max = CaselessKeyword('max')
+    wait_until_expr = (
+            wait_until + select_expr + Optional(
+                wait_appears | wait_disappears
+            ) +
+            Optional(wait_max + pos_number)
+    )
+    wait_expr = Group(wait_kw + (pos_number | wait_until_expr))
 
     back_expr = Group(back_kw + Optional(pos_int))
     forward_expr = Group(forward_kw + Optional(pos_int))
@@ -412,7 +423,7 @@ class Bro():
         elif action == 'meta':
             self.meta(args)
         elif action == 'wait':
-            self.wait(args[0])
+            self.wait(args)
         elif action == 'goto':
             self.goto(*args)
         elif action == 'back':
@@ -470,9 +481,58 @@ class Bro():
         Execute a wait statement.
         '''
 
+        if len(t) == 1:
+            self.wait_abs(t[0])
+        else:
+            # TODO rewrite this shit.
+            appears = 'appears'
+            timeout = -1
+            if len(t) > 2:
+                if t[2] != 'max':
+                    appears = t[2]
+
+                    if len(t) > 3:
+                        timeout = (t[4] or -1)
+                else:
+                    timeout = (t[3] or -1)
+
+            print(t[1])
+            print(appears)
+            print(timeout)
+
+            self.wait_until(
+                t[1],  # selector
+                appears,
+                timeout=timeout
+            )
+
+    def wait_abs(self, sleep_time):
         start = timeit.default_timer()
-        time.sleep(t)
-        self._print_perf_info('sleep', start, t)
+        time.sleep(sleep_time)
+        self._print_perf_info('wait', start, sleep_time)
+
+    def wait_until(self, sel, appears, timeout=-1):
+        start = timeit.default_timer()
+        self._set_browser()
+        wdw = WebDriverWait(self._browser, int(timeout))
+
+        if appears == 'appears':
+            wdw.until(
+                lambda x: x.find_element_by_css_selector(sel.__str__())
+            )
+        else:
+            wdw.until_not(
+                lambda x: not x.find_element_by_css_selector(sel.__str__())
+            )
+
+        self._print_perf_info(
+            'wait',
+            start,
+            'until',
+            sel,
+            appears,
+            ('max ' + str(timeout)) if timeout > 0 else ''
+        )
 
     def goto(self, href):
         '''

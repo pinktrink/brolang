@@ -14,9 +14,14 @@ click 10,20
 click + 10,20
 click 'ul li .test'
 
+wait until '.html5' appears max 1
+
 mouse 10,20
 mouse + 10,20
 mouse '.html5'
+
+wait until '.html5m'
+wait until '.html5m' appears
 
 scroll 10,20
 scroll - 10,20
