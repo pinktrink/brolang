@@ -150,9 +150,9 @@ class BroLang():
         regex_ignore_case | regex_dotall | regex_locale | regex_unicode
     )))
     comment = Literal('#') + SkipTo(LineEnd()) + LineEnd()
-    listget = lsquare + Word(nums) + rsquare
+    list_subscript = lsquare + Word(nums) + rsquare
     select_expr = Group(
-        qstring + Optional(listget)
+        qstring + Optional(list_subscript)
     ).setParseAction(getSelector)
 
     init_kw = CaselessKeyword('init')
