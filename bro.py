@@ -728,7 +728,7 @@ class Bro():
         Get the BeautifulSoup object for the current page source.
         '''
 
-        return BeautifulSoup(self._browser.page_source, 'html.parser')
+        return BeautifulSoup(self._browser.page_source, 'lxml')
 
     def _get_element(self, sel):
         '''
