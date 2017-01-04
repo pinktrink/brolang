@@ -161,7 +161,6 @@ class BroLang():
     coords = Group(unit + comma.suppress() + unit)
 
     screen_kw = CaselessKeyword('screen')
-    meta_kw = CaselessKeyword('meta')
     goto_kw = CaselessKeyword('goto')
     wait_kw = CaselessKeyword('wait')
     click_kw = CaselessKeyword('click')
@@ -446,22 +445,12 @@ class Bro():
 
     def screen_size(self, x, y):
         '''
-        Execute a meta screen_size statement.
+        Execute a screen size statement.
         '''
 
         start = timeit.default_timer()
-        self._set_browser()
         self._browser.set_window_size(x, y)
         self._print_perf_info('screen_size', start, x, y)
-
-    def user_agent(self, ua):
-        '''
-        Execute an init user_agent statement.
-        '''
-
-        start = timeit.default_timer()
-        self._set_browser()
-        self._print_perf_info('user_agent', start, ua)
 
     def wait(self, t):
         '''
@@ -500,7 +489,6 @@ class Bro():
 
     def wait_until(self, sel, appears, timeout=-1):
         start = timeit.default_timer()
-        self._set_browser()
         wdw = WebDriverWait(self._browser, int(timeout))
 
         if appears == 'appears':
@@ -527,7 +515,6 @@ class Bro():
         '''
 
         start = timeit.default_timer()
-        self._set_browser()
         self._browser.get(href)
         self._print_perf_info('goto', start, href)
 
@@ -537,7 +524,6 @@ class Bro():
         '''
 
         start = timeit.default_timer()
-        self._set_browser()
         for i in range(int(num)):
             self._browser.back()
         self._print_perf_info('back', start, int(num))
@@ -548,7 +534,6 @@ class Bro():
         '''
 
         start = timeit.default_timer()
-        self._set_browser()
         for i in range(int(num)):
             self._browser.forward()
         self._print_perf_info('forward', start, int(num))
@@ -634,7 +619,6 @@ class Bro():
         Execute an assert content /x/ present (in 'selector'([x]))
         statement.
         '''
-
 
         if in_el is None:
             in_el = CSSSelector('body', 0)
