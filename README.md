@@ -8,11 +8,7 @@ Look at `bro.py`, at the class `BroLang`. It defines the grammar for the languag
 
 ```
 # Comment
-init browser chrome  # Set the browser to chrome, if absent, defaults to Chrome
-init private         # Use private browsing (incognito in Chrome terms), if absent, defaults to standard browsing
-
-meta user_agent 'blah blah'  # Set a new user agent
-meta screen_size 1000, 1000  # Set the screen size to x=1000, y=1000
+screen size 1000, 1000  # Set the screen size to x=1000, y=1000
 
 goto 'http://www.example.com'  # Browser to www.example.com
 
