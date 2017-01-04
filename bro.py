@@ -5,6 +5,8 @@ import sys
 import atexit
 import timeit
 import re
+import argparse
+import functools
 
 from pyparsing import (
     Word,
@@ -155,8 +157,10 @@ class BroLang():
     select_expr = Group(
         qstring + Optional(list_subscript)
     ).setParseAction(getSelector)
+    pos_coords = Group(pos_unit + comma.suppress() + pos_unit)
+    coords = Group(unit + comma.suppress() + unit)
 
-    init_kw = CaselessKeyword('init')
+    screen_kw = CaselessKeyword('screen')
     meta_kw = CaselessKeyword('meta')
     goto_kw = CaselessKeyword('goto')
     wait_kw = CaselessKeyword('wait')
@@ -167,18 +171,9 @@ class BroLang():
     forward_kw = CaselessKeyword('forward')
     assert_kw = CaselessKeyword('assert')
 
-    init_private_expr = CaselessKeyword('private')
-    init_browser_expr = CaselessKeyword('browser') + Word(alphanums + '.')
-    init_ua_expr = CaselessKeyword('user_agent') + qstring
-    init_expr = Group(init_kw + (
-        init_private_expr |
-        init_browser_expr |
-        init_ua_expr
-    ))
-
-    meta_screen = CaselessKeyword('screen_size')
-    meta_screen_expr = meta_screen + Group(pos_number + comma + pos_number)
-    meta_expr = Group(meta_kw + meta_screen_expr)
+    screen_size = CaselessKeyword('size')
+    screen_size_expr = screen_size + pos_coords
+    screen_expr = Group(screen_kw + screen_size_expr)
 
     goto_expr = Group(goto_kw + qstring)
 
@@ -240,8 +235,7 @@ class BroLang():
 
         expr = (
             self.comment.suppress() |
-            self.init_expr + Optional(self.comment).suppress() |
-            self.meta_expr + Optional(self.comment).suppress() |
+            self.screen_expr + Optional(self.comment).suppress() |
             self.goto_expr + Optional(self.comment).suppress() |
             self.wait_expr + Optional(self.comment).suppress() |
             self.back_expr + Optional(self.comment).suppress() |
@@ -264,16 +258,8 @@ class BroLang():
         accept all three.
         '''
 
-        abs_expr = Group(
-            kw + Group(
-                self.pos_unit + self.comma.suppress() + self.pos_unit
-            )
-        )
-        rel_expr = Group(
-            kw + self.plus_minus + Group(
-                self.unit + self.comma.suppress() + self.unit
-            )
-        )
+        abs_expr = Group(kw + self.pos_coords)
+        rel_expr = Group(kw + self.plus_minus + self.coords)
         sel_expr = Group(kw + self.select_expr)
 
         return abs_expr | rel_expr | sel_expr
@@ -303,6 +289,18 @@ class BroLang():
         return self._positional_statement(scroll)
 
 
+def create_bro(browser=DEFAULT_BROWSER, user_agent=None, private=False):
+    '''
+    Create a Bro instance.
+    '''
+
+    return Bro(
+        browser=browser,
+        user_agent=user_agent,
+        private=private
+    )
+
+
 class Bro():
     '''
     Take action based on parser input.
@@ -311,12 +309,15 @@ class Bro():
     _positional_actions = [
         'click', 'mouse', 'scroll'
     ]
-    _browser = None
-    _action = None
-    _brname = DEFAULT_BROWSER
-    _user_agent = None
-    _private = False
-    _clean = True
+
+    def __init__(self, *, browser, user_agent, private):
+        self._browser = None
+        self._action = None
+        self._brname = DEFAULT_BROWSER
+        self._user_agent = None
+        self._private = False
+        self._clean = True
+        self._set_browser()
 
     def is_clean(self):
         '''
@@ -418,10 +419,8 @@ class Bro():
 
         action, args = (t[0], t[1:])
 
-        if action == 'init':
-            self.init(args)
-        elif action == 'meta':
-            self.meta(args)
+        if action == 'screen':
+            self.screen(args)
         elif action == 'wait':
             self.wait(args)
         elif action == 'goto':
@@ -437,25 +436,13 @@ class Bro():
         else:
             print('unknown action', action)
 
-    def init(self, t):
+    def screen(self, t):
         '''
-        Execute an init statement.
-        '''
-
-        if t[0] == 'browser':
-            self._brname = t[1]
-        elif t[0] == 'private':
-            self._private = True
-        elif t[0] == 'user_agent':
-            self._user_agent = t[1]
-
-    def meta(self, t):
-        '''
-        Execute a meta statement.
+        Execute a screen statement.
         '''
 
-        if t[0] == 'screen_size':
-            self.screen_size(*t[1][0:])
+        if t[0] == 'size':
+            self.screen_size(*t[1])
 
     def screen_size(self, x, y):
         '''
@@ -856,8 +843,45 @@ class Bro():
         start = timeit.default_timer()
         self._print_perf_info('scroll_abs', start, x, y)
 
-b = Bro()
-for stmt in BroLang().bnf().parseFile('test.bro'):
-    b.execute(stmt)
 
-sys.exit(int(not b.is_clean()))
+def allClean(a, b):
+    return a and b.is_clean
+
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument('file', help='The file to run.')
+    # ap.add_argument(
+    #     '-q',
+    #     '--quiet',
+    #     help='Output nothing.',
+    #     action='store_true'
+    # )
+    ap.add_argument(
+        '-b',
+        '--browser',
+        help='A browser to use.',
+        action='append'
+    )
+    ap.add_argument(
+        '-u',
+        '--user-agent',
+        help='The user agent to use.'
+    )
+    ap.add_argument(
+        '-p',
+        '--private',
+        help='Use private (incognito) mode to browse.',
+        action='store_true'
+    )
+    args = ap.parse_args()
+
+    browsers = [
+        create_bro(b, args.user_agent, args.private) for b in args.browser
+    ]
+
+    for stmt in BroLang().bnf().parseFile(args.file):
+        for browser in browsers:
+            browser.execute(stmt)
+
+    sys.exit(int(not functools.reduce(allClean, browsers, True)))

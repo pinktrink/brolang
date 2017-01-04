@@ -1,10 +1,6 @@
 # Comment line
 
-init browser chrome
-init private
-init user_agent 'blah blah'
-
-meta screen_size 1000, 1000
+screen size 1000, 1000
 
 goto 'http://erickever.com'
 
