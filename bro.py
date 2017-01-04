@@ -375,10 +375,12 @@ class Bro():
                     self._browser = wd.Firefox(firefox_profile=opts)
                 else:
                     if self._private:
-                        print('private browsing is not supported for', br)
+                        self._print_info(
+                            'private browsing is not supported yet'
+                        )
 
                     if self._user_agent:
-                        print('user agent is not supported for', br)
+                        self._print_info('user agent is not supported yet')
 
                     self._browser = getattr(wd, br)()
 
@@ -386,8 +388,8 @@ class Bro():
 
                 atexit.register(self._exit_browser)
             except WebDriverException as wde:
-                print(wde.msg)
-                sys.exit(1)
+                self._print_info(wde.msg)
+                self._fail()
 
     def _print_info(self, *args):
         print(f'[{self._brname}]', *args)
@@ -873,7 +875,7 @@ if __name__ == '__main__':
     ap.add_argument(
         '-i',
         '--ignore-browser-failure',
-        help='If a browser fails, ignore it.',
+        help='Ignore browser failures (unless all browsers fail).',
         action='store_true'
     )
     ap.add_argument(
