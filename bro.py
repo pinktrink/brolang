@@ -845,7 +845,8 @@ if __name__ == '__main__':
         '-b',
         '--browser',
         help='A browser to use.',
-        action='append'
+        action='append',
+        default=[]
     )
     ap.add_argument(
         '-u',
@@ -860,8 +861,10 @@ if __name__ == '__main__':
     )
     args = ap.parse_args()
 
+    build_browsers = args.browser or [DEFAULT_BROWSER]
+
     browsers = [
-        create_bro(b, args.user_agent, args.private) for b in args.browser
+        create_bro(b, args.user_agent, args.private) for b in build_browsers
     ]
 
     for stmt in BroLang().bnf().parseFile(args.file):
