@@ -389,11 +389,10 @@ class Bro():
         Print performance information for a given command.
         '''
 
-        print(
-            cmd,
-            *args,  # Error in Vim, unsure why.
-            ':: (' + '{0:f}'.format(timeit.default_timer() - start) + ' sec)'
-        )
+        argstr = ' '.join(map(str, args))
+        timestr = '{0:f}'.format(timeit.default_timer() - start)
+
+        print(f'[{self._brname}] {cmd} {argstr} :: ({timestr} sec)')
 
     def _execute_positional(self, action, args):
         '''
