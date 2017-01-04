@@ -870,4 +870,8 @@ if __name__ == '__main__':
         for browser in browsers:
             browser.execute(stmt)
 
+    # Yes, Python 3 removed the reduce builtin, and yes, 99% of the time a for
+    # loop is more readable. In this case, I personally think reduce works just
+    # as well, hence the usage of functools. I'll consider rewriting when there
+    # are more hands on this than just mine. -ekever
     sys.exit(int(not functools.reduce(allClean, browsers, True)))
