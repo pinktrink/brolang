@@ -340,7 +340,7 @@ class Bro():
         Set the browser, if it hasn't been set yet.
         '''
 
-
+        # Thanks to a lack of consistency in Selenium, here be dragons. -ekever
         if not self._browser:
             try:
                 br = self._brname[0].upper() + self._brname[1:].lower()
