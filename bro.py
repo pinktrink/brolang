@@ -173,6 +173,9 @@ class BroLang():
     forward_kw = CaselessKeyword('forward')
     assert_kw = CaselessKeyword('assert')
 
+    present_kw = CaselessKeyword('present')
+    absent_kw = CaselessKeyword('absent')
+
     screen_size = CaselessKeyword('size')
     screen_size_expr = screen_size + pos_coords
     screen_expr = Group(screen_kw + screen_size_expr)
@@ -180,14 +183,10 @@ class BroLang():
     goto_expr = Group(goto_kw + qstring)
 
     wait_until = CaselessKeyword('until')
-    wait_appears = CaselessKeyword('appears')
-    wait_disappears = CaselessKeyword('disappears')
     wait_max = CaselessKeyword('max')
     wait_until_expr = (
-            wait_until + select_expr + Optional(
-                wait_appears | wait_disappears
-            ) +
-            Optional(wait_max + pos_number)
+        wait_until + select_expr + (present_kw | absent_kw) +
+        Optional(wait_max + pos_number)
     )
     wait_expr = Group(wait_kw + (pos_number | wait_until_expr))
 
@@ -195,20 +194,18 @@ class BroLang():
     forward_expr = Group(forward_kw + Optional(pos_int))
 
     assert_content = CaselessKeyword('content')
-    assert_present = CaselessKeyword('present')
-    assert_absent = CaselessKeyword('absent')
     assert_in = CaselessKeyword('in')
     assert_content_present_expr = (
         assert_content +
         regex +
-        (assert_present | assert_absent) +
+        (present_kw | absent_kw) +
         Optional(assert_in + select_expr)
     )
     assert_source = CaselessKeyword('source')
     assert_source_present_expr = (
         assert_source +
         regex +
-        (assert_present | assert_absent)
+        (present_kw | absent_kw)
     )
     assert_element = CaselessKeyword('element')
     assert_element_visible = CaselessKeyword('visible')
@@ -220,7 +217,7 @@ class BroLang():
     )
     assert_alert = CaselessKeyword('alert')
     assert_alert_present_expr = (
-        assert_alert + (assert_present | assert_absent)
+        assert_alert + (present_kw | absent_kw)
     )
     assert_expr = Group(assert_kw + (
         assert_content_present_expr |
@@ -482,25 +479,17 @@ class Bro():
         if len(t) == 1:
             self.wait_abs(t[0])
         else:
-            # TODO rewrite this shit.
-            appears = 'appears'
+            # At this point, we're assuming it's a wait until statement.
+            # until 'x' (pre|ab)sent max y
+            # 1      2   3           4   5
             timeout = -1
-            if len(t) > 2:
-                if t[2] != 'max':
-                    appears = t[2]
-
-                    if len(t) > 3:
-                        timeout = (t[4] or -1)
-                else:
-                    timeout = (t[3] or -1)
-
-            print(t[1])
-            print(appears)
-            print(timeout)
+            # if there is a 'max y' statement AND max is > 0
+            if len(t) == 5 and t[4] > 0:
+                timeout = t[4]
 
             self.wait_until(
-                t[1],  # selector
-                appears,
+                t[1],
+                t[2],
                 timeout=timeout
             )
 
@@ -509,11 +498,11 @@ class Bro():
         time.sleep(sleep_time)
         self._print_perf_info('wait', start, sleep_time)
 
-    def wait_until(self, sel, appears, timeout=-1):
+    def wait_until(self, sel, presence, timeout=-1):
         start = timeit.default_timer()
         wdw = WebDriverWait(self._browser, int(timeout))
 
-        if appears == 'appears':
+        if presence == 'present':
             wdw.until(
                 lambda x: x.find_element_by_css_selector(sel.__str__())
             )
@@ -527,7 +516,7 @@ class Bro():
             start,
             'until',
             sel,
-            appears,
+            presence,
             ('max ' + str(timeout)) if timeout > 0 else ''
         )
 
