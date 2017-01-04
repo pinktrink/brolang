@@ -62,9 +62,9 @@ def negateUnit(unit):
 
 
 # class CSSUnit():
-#     """
+#     '''
 #     Allows for storage and conversion of CSS units.
-#     """
+#     '''
 
 #     num = 0
 #     unit = 'px'
@@ -87,10 +87,10 @@ def negateUnit(unit):
 
 
 class CSSSelector():
-    """
+    '''
     Deals with CSS selectors and getting individual items from a list of
     elements.
-    """
+    '''
 
     selector = ''
     get = None
@@ -113,13 +113,13 @@ class CSSSelector():
 
 
 class BroLang():
-    """
+    '''
     Define the overall langauge that will be used to represent browser
     control logic.
     Thanks to pyparsing this is defined in a pseudo Backus-Naur form.
     We split each instruction into its own array for easier parsing by
     Bro.execute().
-    """
+    '''
 
     point = Literal('.')
     comma = Literal(',').suppress()
@@ -304,9 +304,9 @@ class BroLang():
 
 
 class Bro():
-    """
+    '''
     Take action based on parser input.
-    """
+    '''
 
     _positional_actions = [
         'click', 'mouse', 'scroll'
