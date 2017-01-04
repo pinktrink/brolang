@@ -18,6 +18,9 @@ from pyparsing import (
     LineEnd,
     ZeroOrMore,
     QuotedString,
+    sglQuotedString,
+    dblQuotedString,
+    removeQuotes,
     LineEnd,
     SkipTo,
     Forward,
@@ -144,7 +147,7 @@ class BroLang():
     pos_unit = pos_number
     # unit = Group(number + unit_suf).setParseAction(defaultPixel)
     unit = number
-    qstring = QuotedString("'", escChar='\\') | QuotedString('"', escChar='\\')
+    qstring = (sglQuotedString | dblQuotedString).setParseAction(removeQuotes)
     regex_ignore_case = Literal('i')
     regex_dotall = Literal('s')
     regex_locale = Literal('l')
