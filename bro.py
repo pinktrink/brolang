@@ -319,6 +319,8 @@ class Bro():
         self._user_agent = user_agent
         self._private = private
         self._clean = True
+        self._failed = False
+        self._exited = False
         self._set_browser()
 
     def is_clean(self):
@@ -333,7 +335,10 @@ class Bro():
         Perform any necessary steps to allow a clean exit.
         '''
 
-        self._browser.quit()
+        if not self._exited:
+            self._browser.quit()
+
+            self._exited = True
 
     def _set_browser(self):
         '''
@@ -387,6 +392,9 @@ class Bro():
                 print(wde.msg)
                 sys.exit(1)
 
+    def _print_info(self, *args):
+        print(f'[{self._brname}]', *args)
+
     def _print_perf_info(self, cmd, start, *args):
         '''
         Print performance information for a given command.
@@ -395,7 +403,7 @@ class Bro():
         argstr = ' '.join(map(str, args))
         timestr = '{0:f}'.format(timeit.default_timer() - start)
 
-        print(f'[{self._brname}] {cmd} {argstr} :: ({timestr} sec)')
+        self._print_info(f'{cmd} {argstr} :: ({timestr} sec)')
 
     def _execute_positional(self, action, args):
         '''
@@ -413,29 +421,41 @@ class Bro():
         else:
             getattr(self, action + '_abs')(*args[0])
 
+    def _fail(self):
+        self._print_info('Assuming browser failure and exiting browser.')
+        self._failed = True
+        self._exit_browser()
+
     def execute(self, t):
         '''
         Execute a statement.
         '''
 
+        if self._failed:
+            return
+
         action, args = (t[0], t[1:])
 
-        if action == 'screen':
-            self.screen(args)
-        elif action == 'wait':
-            self.wait(args)
-        elif action == 'goto':
-            self.goto(*args)
-        elif action == 'back':
-            self.back(*args)
-        elif action == 'forward':
-            self.forward(*args)
-        elif action == 'assert':
-            self.assertions(args)
-        elif action in self._positional_actions:
-            self._execute_positional(action, args)
-        else:
-            print('unknown action', action)
+        try:
+            if action == 'screen':
+                self.screen(args)
+            elif action == 'wait':
+                self.wait(args)
+            elif action == 'goto':
+                self.goto(*args)
+            elif action == 'back':
+                self.back(*args)
+            elif action == 'forward':
+                self.forward(*args)
+            elif action == 'assert':
+                self.assertions(args)
+            elif action in self._positional_actions:
+                self._execute_positional(action, args)
+            else:
+                self._print_info('Unknown action:', action)
+        except WebDriverException as wde:
+            self._print_info('Web Driver Exception:', wde.__str__().strip())
+            self._fail()
 
     def screen(self, t):
         '''
@@ -860,6 +880,17 @@ if __name__ == '__main__':
         '--private',
         help='Use private (incognito) mode to browse.',
         action='store_true'
+    )
+    ap.add_argument(
+        '-i',
+        '--ignore-browser-failure',
+        help='If a browser fails, ignore it.',
+        action='store_true'
+    )
+    ap.add_argument(
+        '-o',
+        '--output',
+        help='Output to a file (Ignores -q).'
     )
     args = ap.parse_args()
 
