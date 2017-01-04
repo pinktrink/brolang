@@ -315,9 +315,9 @@ class Bro():
     def __init__(self, *, browser, user_agent, private):
         self._browser = None
         self._action = None
-        self._brname = DEFAULT_BROWSER
-        self._user_agent = None
-        self._private = False
+        self._brname = browser
+        self._user_agent = user_agent
+        self._private = private
         self._clean = True
         self._set_browser()
 
