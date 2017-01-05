@@ -259,10 +259,10 @@ class BroLang():
         '''
 
         abs_expr = Group(kw + self.pos_coords)
-        rel_expr = Group(kw + self.plus_minus + self.coords)
+        # rel_expr = Group(kw + self.plus_minus + self.coords)
         sel_expr = Group(kw + self.select_expr)
 
-        return abs_expr | rel_expr | sel_expr
+        return abs_expr | sel_expr
 
     def click(self):
         '''
@@ -337,6 +337,9 @@ class Bro():
             self._browser.quit()
 
             self._exited = True
+
+    # def _inject_cursor_tracker(self):
+    #     pass
 
     def _set_browser(self):
         '''
@@ -419,11 +422,11 @@ class Bro():
         relative, a selector, or absolute.
         '''
 
-        if args[0] == '+':
-            getattr(self, action + '_rel')(*args[1])
-        elif args[0] == '-':
-            getattr(self, action + '_rel')(*map(negateUnit, args[1:][0]))
-        elif isinstance(args[0], CSSSelector):
+        # if args[0] == '+':
+        #     getattr(self, action + '_rel')(*args[1])
+        # elif args[0] == '-':
+        #     getattr(self, action + '_rel')(*map(negateUnit, args[1:][0]))
+        if isinstance(args[0], CSSSelector):
             getattr(self, action + '_sel')(args[0])
         # elif isinstance(args[0][0], CSSUnit):
         else:
@@ -782,13 +785,16 @@ class Bro():
 
         return content
 
-    def click_rel(self, x, y):
-        '''
-        Execute a relative click statement.
-        '''
+    # def _get_cursor_position(self):
+    #     pass
 
-        start = timeit.default_timer()
-        self._print_perf_info('click_rel', start, x, y)
+    # def click_rel(self, x, y):
+    #     '''
+    #     Execute a relative click statement.
+    #     '''
+
+    #     start = timeit.default_timer()
+    #     self._print_perf_info('click_rel', start, x, y)
 
     def click_sel(self, sel):
         '''
@@ -806,13 +812,13 @@ class Bro():
         start = timeit.default_timer()
         self._print_perf_info('click_abs', start, x, y)
 
-    def mouse_rel(self, x, y):
-        '''
-        Execute a relative mouse statement.
-        '''
+    # def mouse_rel(self, x, y):
+    #     '''
+    #     Execute a relative mouse statement.
+    #     '''
 
-        start = timeit.default_timer()
-        self._print_perf_info('mouse_rel', start, x, y)
+    #     start = timeit.default_timer()
+    #     self._print_perf_info('mouse_rel', start, x, y)
 
     def mouse_sel(self, sel):
         '''
@@ -833,13 +839,13 @@ class Bro():
         self._action.move_by_offset(x, y).perform()
         self._print_perf_info('mouse_abs', start, x, y)
 
-    def scroll_rel(self, x, y):
-        '''
-        Execute a relative scroll statement.
-        '''
+    # def scroll_rel(self, x, y):
+    #     '''
+    #     Execute a relative scroll statement.
+    #     '''
 
-        start = timeit.default_timer()
-        self._print_perf_info('scroll_rel', start, x, y)
+    #     start = timeit.default_timer()
+    #     self._print_perf_info('scroll_rel', start, x, y)
 
     def scroll_sel(self, sel):
         '''
@@ -908,6 +914,12 @@ if __name__ == '__main__':
         choices=['lxml', 'html.parser', 'html5lib'],
         default=DEFAULT_HTML_PARSER
     )
+    # ap.add_arguments(
+    #     '-s',
+    #     '--strict-mouse-tracking',
+    #     help='Use strict mouse tracking (can hurt performance).',
+    #     action='store_true'
+    # )
     args = ap.parse_args()
 
     quiet_mode = args.quiet

@@ -7,19 +7,16 @@ goto 'http://erickever.com'
 wait 5 # Comment after expression
 
 click 10,20
-click + 10,20
 click 'ul li .test'
 
 wait until '.html5' present max 1
 
 mouse 10,20
-mouse + 10,20
 mouse '.html5'
 
 wait until '.html5m' present
 
 scroll 10,20
-scroll - 10,20
 scroll 'ul li .test'[0]
 
 wait 5
