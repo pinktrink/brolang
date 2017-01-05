@@ -289,18 +289,6 @@ class BroLang():
         return self._positional_statement(scroll)
 
 
-def create_bro(browser=DEFAULT_BROWSER, user_agent=None, private=False):
-    '''
-    Create a Bro instance.
-    '''
-
-    return Bro(
-        browser=browser,
-        user_agent=user_agent,
-        private=private
-    )
-
-
 class Bro():
     '''
     Take action based on parser input.
@@ -309,6 +297,18 @@ class Bro():
     _positional_actions = [
         'click', 'mouse', 'scroll'
     ]
+
+    @classmethod
+    def create(cls, browser=DEFAULT_BROWSER, user_agent=None, private=False):
+        '''
+        Create a Bro instance.
+        '''
+
+        return cls(
+            browser=browser,
+            user_agent=user_agent,
+            private=private
+        )
 
     def __init__(self, *, browser, user_agent, private):
         self._browser = None
@@ -333,10 +333,11 @@ class Bro():
         Perform any necessary steps to allow a clean exit.
         '''
 
-        if not self._exited:
-            self._browser.quit()
+        if self._exited:
+            return
 
-            self._exited = True
+        self._browser.quit()
+        self._exited = True
 
     # def _inject_cursor_tracker(self):
     #     pass
@@ -347,64 +348,71 @@ class Bro():
         '''
 
         # Thanks to a lack of consistency in Selenium, here be dragons. -ekever
-        if not self._browser:
-            try:
-                if self._brname == 'Chrome':
-                    opts = wd.ChromeOptions()
+        if self._browser:
+            return
 
-                    if self._private:
-                        opts.add_argument('--incognito')
+        try:
+            if self._brname == 'Chrome':
+                self._browser = self._create_browser_chrome()
+            elif self._brname == 'Firefox':
+                self._browser = self._create_browser_firefox()
+            else:
+                self._browser = self._create_browser_default()
 
-                    if self._user_agent is not None:
-                        opts.add_argument('--user-agent=' + self._user_agent)
+            self._action = ActionChains(self._browser)
 
-                    self._browser = wd.Chrome(chrome_options=opts)
-                elif self._brname == 'Firefox':
-                    opts = wd.FirefoxProfile()
+            atexit.register(self._exit_browser)
+        except WebDriverException as wde:
+            self._print_info(wde.msg)
+            self._fail()
 
-                    if self._private:
-                        opts.set_preference(
-                            'browser.privatebrowsing.autostart',
-                            True
-                        )
+    def _create_browser_chrome(self):
+        opts = wd.ChromeOptions()
 
-                    if self._user_agent is not None:
-                        opts.set_preference(
-                            'general.useragent.override',
-                            self._user_agent
-                        )
+        if self._private:
+            opts.add_argument('--incognito')
 
-                    self._browser = wd.Firefox(firefox_profile=opts)
-                else:
-                    if self._private:
-                        self._print_info(
-                            'private browsing is not supported yet'
-                        )
+        if self._user_agent is not None:
+            opts.add_argument('--user-agent=' + self._user_agent)
 
-                    if self._user_agent:
-                        self._print_info('user agent is not supported yet')
+        return wd.Chrome(chrome_options=opts)
 
-                    self._browser = getattr(wd, self._brname)()
+    def _create_browser_firefox(self):
+        opts = wd.FirefoxProfile()
 
-                self._action = ActionChains(self._browser)
+        if self._private:
+            opts.set_preference(
+                'browser.privatebrowsing.autostart',
+                True
+            )
 
-                atexit.register(self._exit_browser)
-            except WebDriverException as wde:
-                self._print_info(wde.msg)
-                self._fail()
+        if self._user_agent is not None:
+            opts.set_preference(
+                'general.useragent.override',
+                self._user_agent
+            )
+
+        return wd.Firefox(firefox_profile=opts)
+
+    def _create_browser_default(self):
+        if self._private:
+            self._print_info(
+                'private browsing is not supported yet'
+            )
+
+        if self._user_agent:
+            self._print_info('user agent is not supported yet')
+
+        return getattr(wd, self._brname)()
 
     def _print_info(self, *args):
         # quiet_mode, output_file, and output_fh are defined down below in the
         # code that gets executed first.
-        if quiet_mode and not output_file:
+        if quiet_mode:
             return
 
         out = f'[{self._brname}] ' + ' '.join(args)
-
-        if not output_file:
-            print(out)
-        else:
-            output_fh.write(out + '\n')
+        print(out, file=output_fh)
 
     def _print_perf_info(self, cmd, start, *args):
         '''
@@ -447,28 +455,32 @@ class Bro():
 
         action, args = (t[0], t[1:])
 
+        # TODO: move to class level probably near _positional_actions
+        action_methods = {
+            'assert': 'assertions',
+        }
+
+        action_method_name = action_methods.get(action, action)
+        action_method = getattr(
+            self,
+            action_method_name,
+            lambda *a: self._default_action(action, *a)
+        )
+
         try:
-            if action == 'screen':
-                self.screen(args)
-            elif action == 'wait':
-                self.wait(args)
-            elif action == 'goto':
-                self.goto(*args)
-            elif action == 'back':
-                self.back(*args)
-            elif action == 'forward':
-                self.forward(*args)
-            elif action == 'assert':
-                self.assertions(args)
-            elif action in self._positional_actions:
-                self._execute_positional(action, args)
-            else:
-                self._print_info('Unknown action:', action)
+            action_method(*args)
         except WebDriverException as wde:
             self._print_info('Web Driver Exception:', wde.__str__().strip())
             self._fail()
 
-    def screen(self, t):
+    def _default_action(self, action, *args):
+        if action in self._positional_actions:
+            self._execute_positional(action, args)
+        else:
+            self._print_info('Unknown action:', action)
+
+
+    def screen(self, *t):
         '''
         Execute a screen statement.
         '''
@@ -485,7 +497,7 @@ class Bro():
         self._browser.set_window_size(x, y)
         self._print_perf_info('screen_size', start, x, y)
 
-    def wait(self, t):
+    def wait(self, *t):
         '''
         Execute a wait statement.
         '''
@@ -577,18 +589,37 @@ class Bro():
 
         return (content, flags)
 
-    def assertions(self, t):
+    def assertions(self, assert_type, *t):
         '''
         Execute an assert statement.
         '''
 
-        if t[0] == 'content':
+        # TODO: split into smaller functions for each block.
+        # e.g. assertions_content, assertions_source, assertions_alert
+
+        # edit: i see this is sort of already done, but for t[1]/t[2].
+        # kind of a common pattern to apply one of the args to determine
+        # a subroutine to be called (like i did in execute() above),
+        # so maybe something can be generalzized out for all of this.
+
+        # TODO: maybe a context manager for handling start, res, and
+        # print_perf_info. the output will prob need to be templates
+        # instead of gluing strings together
+
+        # XXX: not sure i like that `res` starts as True. seems
+        # like None would be appropriate just in case there's a need
+        # to tell things apart. probably not a big deal just makes me
+        # itch for some reason
+
+        if assert_type == 'content':
             start = timeit.default_timer()
             args = self._reduce_regex_args(t[1])
             kwargs = {}
             res = True
 
             try:
+                # it would be good to let python do the arg unpacking for you
+                # e.g. if you called "self.assertions_content(*t)"
                 t[3]
                 kwargs['in_el'] = t[4]
             except IndexError:
@@ -605,7 +636,7 @@ class Bro():
                 t[2] + (' in ' + str(kwargs['in_el']) if kwargs else ''),
                 'passed' if res is True else 'failed'
             )
-        elif t[0] == 'source':
+        elif assert_type == 'source':
             start = timeit.default_timer()
             args = self._reduce_regex_args(t[1])
             res = True
@@ -621,7 +652,7 @@ class Bro():
                 t[2],
                 'passed' if res is True else 'failed'
             )
-        elif t[0] == 'alert':
+        elif assert_type == 'alert':
             start = timeit.default_timer()
             res = True
 
@@ -748,6 +779,8 @@ class Bro():
             if len(el) is 1:
                 return el[0]
             else:
+                # XXX: pretty sure you can't raise a string (not in my interpreter
+                # anyway) so probably wrap this and others in Exception()
                 raise 'you must iterate through a list of elements or use [x]'
         else:
             return el[sel.get]
@@ -869,6 +902,11 @@ def allClean(a, b):
 
 
 if __name__ == '__main__':
+    # I would create a `BroCLI` class that encapsulates all
+    # the argparse, output file handling, and sys.exiting
+    # Might be a good place to utilize one of those CLI
+    # frameworks if you're into that
+
     ap = argparse.ArgumentParser()
     ap.add_argument('file', help='The file to run.')
     ap.add_argument(
@@ -927,12 +965,15 @@ if __name__ == '__main__':
     output_file = args.output
 
     if output_file:
+        quiet_mode = False
         output_fh = open(output_file, 'a')
+    else:
+        output_fh = sys.stdout
 
     build_browsers = args.browser or [DEFAULT_BROWSER]
 
     browsers = [
-        create_bro(b, args.user_agent, args.private) for b in build_browsers
+        Bro.create(b, args.user_agent, args.private) for b in build_browsers
     ]
 
     for stmt in BroLang().bnf().parseFile(args.file):
