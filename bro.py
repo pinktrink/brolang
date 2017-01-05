@@ -313,7 +313,7 @@ class Bro():
     def __init__(self, *, browser, user_agent, private):
         self._browser = None
         self._action = None
-        self._brname = browser
+        self._brname = browser[0].upper() + browser[1:].lower()
         self._user_agent = user_agent
         self._private = private
         self._clean = True
@@ -346,9 +346,7 @@ class Bro():
         # Thanks to a lack of consistency in Selenium, here be dragons. -ekever
         if not self._browser:
             try:
-                br = self._brname[0].upper() + self._brname[1:].lower()
-
-                if br == 'Chrome':
+                if self._brname == 'Chrome':
                     opts = wd.ChromeOptions()
 
                     if self._private:
@@ -358,7 +356,7 @@ class Bro():
                         opts.add_argument('--user-agent=' + self._user_agent)
 
                     self._browser = wd.Chrome(chrome_options=opts)
-                elif br == 'Firefox':
+                elif self._brname == 'Firefox':
                     opts = wd.FirefoxProfile()
 
                     if self._private:
@@ -383,7 +381,7 @@ class Bro():
                     if self._user_agent:
                         self._print_info('user agent is not supported yet')
 
-                    self._browser = getattr(wd, br)()
+                    self._browser = getattr(wd, self._brname)()
 
                 self._action = ActionChains(self._browser)
 
