@@ -39,6 +39,7 @@ from bs4 import BeautifulSoup, NavigableString
 
 
 DEFAULT_BROWSER = 'Chrome'
+DEFAULT_HTML_PARSER = 'lxml'
 
 
 def convertFloat(t):
@@ -392,7 +393,17 @@ class Bro():
                 self._fail()
 
     def _print_info(self, *args):
-        print(f'[{self._brname}]', *args)
+        # quiet_mode, output_file, and output_fh are defined down below in the
+        # code that gets executed first.
+        if quiet_mode and not output_file:
+            return
+
+        out = f'[{self._brname}] ' + ' '.join(args)
+
+        if not output_file:
+            print(out)
+        else:
+            output_fh.write(out + '\n')
 
     def _print_perf_info(self, cmd, start, *args):
         '''
@@ -710,9 +721,17 @@ class Bro():
     def _get_bs(self):
         '''
         Get the BeautifulSoup object for the current page source.
+        LXML is the default because it is much more forgiving about
+        messy HTML than html.parser and it is significantly quicker than
+        html5lib.
+
+        See
+        https://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-a-parser
+        for more information.
         '''
 
-        return BeautifulSoup(self._browser.page_source, 'lxml')
+        # html_parser is defined down below in the code that gets executed first
+        return BeautifulSoup(self._browser.page_source, html_parser)
 
     def _get_element(self, sel):
         '''
@@ -848,16 +867,16 @@ def allClean(a, b):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('file', help='The file to run.')
-    # ap.add_argument(
-    #     '-q',
-    #     '--quiet',
-    #     help='Output nothing.',
-    #     action='store_true'
-    # )
+    ap.add_argument(
+        '-q',
+        '--quiet',
+        help='Output nothing.',
+        action='store_true'
+    )
     ap.add_argument(
         '-b',
         '--browser',
-        help='A browser to use.',
+        help=f'A browser to use (defaults to {DEFAULT_BROWSER}).',
         action='append',
         default=[]
     )
@@ -881,9 +900,24 @@ if __name__ == '__main__':
     ap.add_argument(
         '-o',
         '--output',
-        help='Output to a file (Ignores -q).'
+        help='Output to a file instead of stdout (ignores -q).',
+        metavar='FILE'
+    )
+    ap.add_argument(
+        '-m',
+        '--html-parser',
+        help=f'HTML parser to use (defaults to {DEFAULT_HTML_PARSER}).',
+        choices=['lxml', 'html.parser', 'html5lib'],
+        default=DEFAULT_HTML_PARSER
     )
     args = ap.parse_args()
+
+    quiet_mode = args.quiet
+    html_parser = args.html_parser
+    output_file = args.output
+
+    if output_file:
+        output_fh = open(output_file, 'a')
 
     build_browsers = args.browser or [DEFAULT_BROWSER]
 
@@ -894,6 +928,9 @@ if __name__ == '__main__':
     for stmt in BroLang().bnf().parseFile(args.file):
         for browser in browsers:
             browser.execute(stmt)
+
+    if output_file:
+        output_fh.close()
 
     # Yes, Python 3 removed the reduce builtin, and yes, 99% of the time a for
     # loop is more readable. In this case, I personally think reduce works just
