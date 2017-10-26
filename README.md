@@ -52,3 +52,5 @@ assert source /hello, world!/ exists  # Assert 'hello, world!' exists in the sou
 assert alert absent   # Assert there is no alert
 assert alert present  # Assert there is an alert
 ```
+
+[Contributing](contributing.md)
