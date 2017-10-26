@@ -525,7 +525,6 @@ class Bro():
         else:
             self._print_info('Unknown action:', action)
 
-
     def screen(self, *t):
         '''
         Execute a screen statement.
@@ -809,7 +808,8 @@ class Bro():
         for more information.
         '''
 
-        # html_parser is defined down below in the code that gets executed first
+        # html_parser is defined down below in the code that gets executed
+        # first
         return BeautifulSoup(self._browser.page_source, html_parser)
 
     def _get_element(self, sel):
@@ -826,8 +826,9 @@ class Bro():
             if len(el) is 1:
                 return el[0]
             else:
-                # XXX: pretty sure you can't raise a string (not in my interpreter
-                # anyway) so probably wrap this and others in Exception()
+                # XXX: pretty sure you can't raise a string (not in my
+                # interpreter anyway) so probably wrap this and others in
+                # Exception()
                 raise 'you must iterate through a list of elements or use [x]'
         else:
             return el[sel.get]
