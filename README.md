@@ -2,7 +2,7 @@
 
 ## The language for browser automation.
 
-Currently, the language is pretty basic, but is evolving. The very basics are there.
+Currently, the language is pretty basic, but is evolving. The very basics are there. Check [the pipeline](pipeline.md) for information.
 
 Look at `bro.py`, at the class `BroLang`. It defines the grammar for the language. Currently, what is supported is as follows:
 
