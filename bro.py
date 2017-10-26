@@ -1,4 +1,3 @@
-import pdb
 import time
 import inspect
 import sys
@@ -7,6 +6,7 @@ import timeit
 import re
 import argparse
 import functools
+import operator
 
 from pyparsing import (
     Word,
@@ -152,15 +152,18 @@ class BroLang():
     regex_ignore_case = Literal('i')
     regex_dotall = Literal('s')
     regex_locale = Literal('l')
-    regex_unicode = Literal('u')
     regex = Group(QuotedString('/', escChar='\\') + Group(ZeroOrMore(
-        regex_ignore_case | regex_dotall | regex_locale | regex_unicode
+        regex_ignore_case | regex_dotall | regex_locale
     )))
     comment = Literal('#') + SkipTo(LineEnd()) + LineEnd()
     list_subscript = lsquare + Word(nums) + rsquare
     select_expr = Group(
         qstring + Optional(list_subscript)
     ).setParseAction(getSelector)
+    all_kw = CaselessKeyword('all') | CaselessKeyword('each')
+    any_kw = CaselessKeyword('any')
+    iter_select = Group((any_kw | all_kw) + qstring)
+    assert_select = select_expr | iter_select
     pos_coords = Group(pos_unit + comma.suppress() + pos_unit)
     coords = Group(unit + comma.suppress() + unit)
 
@@ -186,7 +189,7 @@ class BroLang():
     wait_until = CaselessKeyword('until')
     wait_max = CaselessKeyword('max')
     wait_until_expr = (
-        wait_until + select_expr + (present_kw | absent_kw) +
+        wait_until + assert_select + (present_kw | absent_kw) +
         Optional(wait_max + pos_number)
     )
     wait_expr = Group(wait_kw + (pos_number | wait_until_expr))
@@ -200,7 +203,7 @@ class BroLang():
         assert_content +
         regex +
         (present_kw | absent_kw) +
-        Optional(assert_in + select_expr)
+        Optional(assert_in + assert_select)
     )
     assert_source = CaselessKeyword('source')
     assert_source_present_expr = (
@@ -214,7 +217,7 @@ class BroLang():
     assert_element_visible_expr = (
         assert_element +
         (assert_element_visible | assert_element_hidden) +
-        qstring
+        assert_select
     )
     assert_alert = CaselessKeyword('alert')
     assert_alert_present_expr = (
@@ -289,6 +292,44 @@ class BroLang():
         return self._positional_statement(scroll)
 
 
+class BroPerf():
+    '''
+    Measure timing of specific actions in brolang.
+    '''
+
+    def __init__(self, action, method, start=True):
+        self._action = action
+        self._start_time = None
+        self._end_time = None
+        self._out_method = method
+        self.done = None
+
+        if start:
+            self.start()
+
+    def start(self):
+        self.done = False
+        self._start_time = timeit.default_timer()
+
+    def end(self, output=True):
+        self.done = True
+        self._end_time = timeit.default_timer()
+
+        if output:
+            self.output()
+
+    def output(self):
+        if not self.done:
+            return False
+
+        self._out_method(
+            '{action} :: ({time:f} sec)'.format(
+                action=self._action,
+                time=self._end_time - self._start_time
+            )
+        )
+
+
 class Bro():
     '''
     Take action based on parser input.
@@ -309,6 +350,11 @@ class Bro():
             user_agent=user_agent,
             private=private
         )
+
+    def _get_perf(self, *args, start=True):
+        action = ' '.join(map(str, args))
+
+        return BroPerf(action, self._print_info, start)
 
     def __init__(self, *, browser, user_agent, private):
         self._browser = None
@@ -493,9 +539,9 @@ class Bro():
         Execute a screen size statement.
         '''
 
-        start = timeit.default_timer()
+        perf = self._get_perf('screen_size', x, y)
         self._browser.set_window_size(x, y)
-        self._print_perf_info('screen_size', start, x, y)
+        perf.end()
 
     def wait(self, *t):
         '''
@@ -520,12 +566,16 @@ class Bro():
             )
 
     def wait_abs(self, sleep_time):
-        start = timeit.default_timer()
+        perf = self._get_perf('wait', sleep_time)
         time.sleep(sleep_time)
-        self._print_perf_info('wait', start, sleep_time)
+        perf.end()
 
     def wait_until(self, sel, presence, timeout=-1):
-        start = timeit.default_timer()
+        perf = self._get_perf(
+            'wait until',
+            sel, presence,
+            ('max ' + str(timeout)) if timeout > 0 else ''
+        )
         wdw = WebDriverWait(self._browser, int(timeout))
 
         if presence == 'present':
@@ -537,43 +587,36 @@ class Bro():
                 lambda x: not x.find_element_by_css_selector(sel.__str__())
             )
 
-        self._print_perf_info(
-            'wait',
-            start,
-            'until',
-            sel,
-            presence,
-            ('max ' + str(timeout)) if timeout > 0 else ''
-        )
+        perf.end()
 
     def goto(self, href):
         '''
         Execute a goto statement.
         '''
 
-        start = timeit.default_timer()
+        perf = self._get_perf('goto', href)
         self._browser.get(href)
-        self._print_perf_info('goto', start, href)
+        perf.end()
 
     def back(self, num=1):
         '''
         Execute a back statement.
         '''
 
-        start = timeit.default_timer()
+        perf = self._get_perf('back', int(num))
         for i in range(int(num)):
             self._browser.back()
-        self._print_perf_info('back', start, int(num))
+        perf.end()
 
     def forward(self, num=1):
         '''
         Execute a forward statement.
         '''
 
-        start = timeit.default_timer()
+        perf = self._get_perf('forward', int(num))
         for i in range(int(num)):
             self._browser.forward()
-        self._print_perf_info('forward', start, int(num))
+        perf.end()
 
     def _reduce_regex_args(self, regex):
         '''
@@ -583,9 +626,10 @@ class Bro():
 
         content = regex[0]
         flags = 0
+        # print(regex[1])
 
-        for flag in set(regex[1]):
-            flags = flags | getattr(re, flag.upper())
+        # for flag in set(regex[1]):
+        #     flags = flags | getattr(re, flag.upper())
 
         return (content, flags)
 
@@ -615,7 +659,7 @@ class Bro():
             start = timeit.default_timer()
             args = self._reduce_regex_args(t[1])
             kwargs = {}
-            res = True
+            res = None
 
             try:
                 # it would be good to let python do the arg unpacking for you
@@ -639,7 +683,6 @@ class Bro():
         elif assert_type == 'source':
             start = timeit.default_timer()
             args = self._reduce_regex_args(t[1])
-            res = True
 
             if t[2] == 'present':
                 res = self.assert_source_present(*args)
@@ -654,7 +697,6 @@ class Bro():
             )
         elif assert_type == 'alert':
             start = timeit.default_timer()
-            res = True
 
             if t[1] == 'present':
                 res = self.assert_alert_present()
@@ -666,6 +708,11 @@ class Bro():
                 start,
                 'passed' if res is True else 'failed'
             )
+        elif assert_type == 'element':
+            start = timeit.default_timer()
+
+            if t[1] == 'visible':
+                pass
 
         else:
             pass
@@ -787,7 +834,7 @@ class Bro():
 
     def _get_element_content(self, sel):
         '''
-        Get a BeautifulSoup representation of an element.
+        Get an element's content only (without tags).
         '''
 
         bs = self._get_bs()
@@ -834,16 +881,16 @@ class Bro():
         Execute a selector click statement.
         '''
 
-        start = timeit.default_timer()
-        self._print_perf_info('click_sel', start, sel)
+        perf = self._get_perf('click_sel', sel)
+        perf.end()
 
     def click_abs(self, x, y):
         '''
         Execute an absolute click statement.
         '''
 
-        start = timeit.default_timer()
-        self._print_perf_info('click_abs', start, x, y)
+        perf = self._get_perf('click_abs', x, y)
+        perf.end()
 
     # def mouse_rel(self, x, y):
     #     '''
@@ -858,19 +905,19 @@ class Bro():
         Execute a selector mouse statement.
         '''
 
-        start = timeit.default_timer()
+        perf = self._get_perf('mouse_sel', sel)
         el = self._get_element(sel)
         self._action.move_to_element(el).perform()
-        self._print_perf_info('mouse_sel', start, sel)
+        perf.end()
 
     def mouse_abs(self, x, y):
         '''
         Execute an absolute mouse statement.
         '''
 
-        start = timeit.default_timer()
+        perf = self._get_perf('mouse_abs', x, y)
         self._action.move_by_offset(x, y).perform()
-        self._print_perf_info('mouse_abs', start, x, y)
+        perf.end()
 
     # def scroll_rel(self, x, y):
     #     '''
@@ -885,20 +932,16 @@ class Bro():
         Execute a selector scroll statement.
         '''
 
-        start = timeit.default_timer()
-        self._print_perf_info('scroll_sel', start, sel)
+        perf = self._get_perf('scroll_sel', sel)
+        perf.end()
 
     def scroll_abs(self, x, y):
         '''
         Execute an absolute scroll statement.
         '''
 
-        start = timeit.default_timer()
-        self._print_perf_info('scroll_abs', start, x, y)
-
-
-def allClean(a, b):
-    return a and b.is_clean
+        perf = self._get_perf('scroll_abs', x, y)
+        perf.end()
 
 
 if __name__ == '__main__':
@@ -987,4 +1030,8 @@ if __name__ == '__main__':
     # loop is more readable. In this case, I personally think reduce works just
     # as well, hence the usage of functools. I'll consider rewriting when there
     # are more hands on this than just mine. -ekever
-    sys.exit(int(not functools.reduce(allClean, browsers, True)))
+    sys.exit(not functools.reduce(
+        operator.and_,
+        [b.is_clean for b in browsers],
+        True)
+    )
