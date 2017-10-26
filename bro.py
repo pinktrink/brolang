@@ -625,10 +625,9 @@ class Bro():
 
         content = regex[0]
         flags = 0
-        # print(regex[1])
 
-        # for flag in set(regex[1]):
-        #     flags = flags | getattr(re, flag.upper())
+        for flag in set(regex[1]):
+            flags = flags | getattr(re, flag.upper())
 
         return (content, flags)
 
@@ -656,61 +655,63 @@ class Bro():
 
         if assert_type == 'content':
             start = timeit.default_timer()
-            args = self._reduce_regex_args(t[1])
+            args = self._reduce_regex_args(t[0].asList())
             kwargs = {}
             res = None
 
             try:
                 # it would be good to let python do the arg unpacking for you
                 # e.g. if you called "self.assertions_content(*t)"
-                t[3]
-                kwargs['in_el'] = t[4]
+                t[2]
+                kwargs['in_el'] = t[3]
             except IndexError:
                 pass
 
-            if t[2] == 'present':
+            if t[1] == 'present':
                 res = self.assert_content_present(*args, **kwargs)
-            elif t[2] == 'absent':
+            elif t[1] == 'absent':
                 res = self.assert_content_absent(*args, **kwargs)
 
             self._print_perf_info(
-                'assert content ' + '/' + args[0] + '/' + ''.join(t[1][1]),
+                'assert content ' + '/' + args[0] + '/' + ''.join(
+                    t[0].asList()[1]
+                ),
                 start,
-                t[2] + (' in ' + str(kwargs['in_el']) if kwargs else ''),
+                t[1] + (' in ' + str(kwargs['in_el']) if kwargs else ''),
                 'passed' if res is True else 'failed'
             )
         elif assert_type == 'source':
             start = timeit.default_timer()
-            args = self._reduce_regex_args(t[1])
+            args = self._reduce_regex_args(t[0].asList())
 
-            if t[2] == 'present':
+            if t[1] == 'present':
                 res = self.assert_source_present(*args)
-            elif t[2] == 'absent':
+            elif t[1] == 'absent':
                 res = self.assert_source_absent(*args)
 
             self._print_perf_info(
                 'assert content ' + '/' + args[0] + '/' + ''.join(t[1][1]),
                 start,
-                t[2],
+                t[1],
                 'passed' if res is True else 'failed'
             )
         elif assert_type == 'alert':
             start = timeit.default_timer()
 
-            if t[1] == 'present':
+            if t[0] == 'present':
                 res = self.assert_alert_present()
-            elif t[1] == 'absent':
+            elif t[0] == 'absent':
                 res = self.assert_alert_absent()
 
             self._print_perf_info(
-                'assert alert ' + t[1],
+                'assert alert ' + t[0],
                 start,
                 'passed' if res is True else 'failed'
             )
         elif assert_type == 'element':
             start = timeit.default_timer()
 
-            if t[1] == 'visible':
+            if t[0] == 'visible':
                 pass
 
         else:
@@ -1033,6 +1034,6 @@ if __name__ == '__main__':
     # are more hands on this than just mine. -ekever
     sys.exit(not functools.reduce(
         operator.and_,
-        [b.is_clean for b in browsers],
+        [b.is_clean() for b in browsers],
         True)
     )
