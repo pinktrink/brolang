@@ -678,7 +678,7 @@ class Bro():
                 ),
                 start,
                 t[1] + (' in ' + str(kwargs['in_el']) if kwargs else ''),
-                'passed' if res is True else 'failed'
+                MESSAGE_PASSED if res is True else MESSAGE_FAILED
             )
         elif assert_type == 'source':
             start = timeit.default_timer()
@@ -693,7 +693,7 @@ class Bro():
                 'assert content ' + '/' + args[0] + '/' + ''.join(t[1][1]),
                 start,
                 t[1],
-                'passed' if res is True else 'failed'
+                MESSAGE_PASSED if res is True else MESSAGE_FAILED
             )
         elif assert_type == 'alert':
             start = timeit.default_timer()
@@ -706,7 +706,7 @@ class Bro():
             self._print_perf_info(
                 'assert alert ' + t[0],
                 start,
-                'passed' if res is True else 'failed'
+                MESSAGE_PASSED if res is True else MESSAGE_FAILED
             )
         elif assert_type == 'element':
             start = timeit.default_timer()
@@ -1014,6 +1014,13 @@ if __name__ == '__main__':
         output_fh = open(output_file, 'a')
     else:
         output_fh = sys.stdout
+
+    COLOR_RED = '\033[91m' if sys.stdout.isatty() and not output_file else ''
+    COLOR_GREEN = '\033[92m' if sys.stdout.isatty() and not output_file else ''
+    COLOR_END = '\033[0m' if sys.stdout.isatty() and not output_file else ''
+
+    MESSAGE_PASSED = COLOR_GREEN + 'passed' + COLOR_END
+    MESSAGE_FAILED = COLOR_RED + 'failed' + COLOR_END
 
     build_browsers = args.browser or [DEFAULT_BROWSER]
 
