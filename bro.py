@@ -489,6 +489,10 @@ class Bro():
     def _fail(self):
         self._print_info('Assuming browser failure and exiting browser.')
         self._failed = True
+
+        if not ignore_fail:
+            self._clean = False
+
         self._exit_browser()
 
     def execute(self, t):
@@ -1008,6 +1012,7 @@ if __name__ == '__main__':
     quiet_mode = args.quiet
     html_parser = args.html_parser
     output_file = args.output
+    ignore_fail = args.ignore_browser_failure
 
     if output_file:
         quiet_mode = False
