@@ -694,7 +694,7 @@ class Bro():
                 res = self.assert_source_absent(*args)
 
             self._print_perf_info(
-                'assert content ' + '/' + args[0] + '/' + ''.join(t[1][1]),
+                'assert source /' + args[0] + '/' + ''.join(t[0].asList()[1]),
                 start,
                 t[1],
                 MESSAGE_PASSED if res is True else MESSAGE_FAILED
