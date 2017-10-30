@@ -175,6 +175,8 @@ class BroLang():
     goto_kw = CaselessKeyword('goto')
     wait_kw = CaselessKeyword('wait')
     click_kw = CaselessKeyword('click')
+    dblclick_kw = CaselessKeyword('doubleclick')
+    rclick_kw = CaselessKeyword('rightclick')
     mouse_kw = CaselessKeyword('mouse')
     scroll_kw = CaselessKeyword('scroll')
     back_kw = CaselessKeyword('back')
@@ -276,7 +278,9 @@ class BroLang():
         Define the click grammar.
         '''
 
-        return self._positional_statement(self.click_kw)
+        return self._positional_statement(
+            self.click_kw | self.dblclick_kw | self.rclick_kw
+        )
 
     def mouse(self):
         '''
@@ -337,7 +341,7 @@ class Bro():
     '''
 
     _positional_actions = [
-        'click', 'mouse', 'scroll'
+        'click', 'doubleclick', 'rightclick', 'mouse', 'scroll'
     ]
 
     @classmethod
@@ -918,6 +922,46 @@ class Bro():
         self._action.click().perform()
         perf.end()
 
+    def doubleclick_sel(self, sel):
+        '''
+        Execute a selector doubleclick statement.
+        '''
+
+        perf = self._get_perf('doubleclick_sel', sel)
+        el = self._get_element(sel)
+        self._action.double_click(el).perform()
+        perf.end()
+
+    def doubleclick_abs(self, x, y):
+        '''
+        Execute an absolute doubleclick statement.
+        '''
+
+        perf = self._get_perf('doubleclick_abs', x, y)
+        self.mouse_abs(x, y, False)
+        self._action.double_click().perform()
+        perf.end()
+
+    def rightclick_sel(self, sel):
+        '''
+        Execute a selector rightclick statement.
+        '''
+
+        perf = self._get_perf('rightclick_sel', sel)
+        el = self._get_element(sel)
+        self._action.context_click(el).perform()
+        perf.end()
+
+    def rightclick_abs(self, x, y):
+        '''
+        Execute an absolute rightclick statement.
+        '''
+
+        perf = self._get_perf('rightclick_abs', x, y)
+        self.mouse_abs(x, y, False)
+        self._action.context_click().perform()
+        perf.end()
+
     # def mouse_rel(self, x, y):
     #     '''
     #     Execute a relative mouse statement.
@@ -936,14 +980,14 @@ class Bro():
         self._action.move_to_element(el).perform()
         perf.end()
 
-    def mouse_abs(self, x, y):
+    def mouse_abs(self, x, y, output=True):
         '''
         Execute an absolute mouse statement.
         '''
 
         perf = self._get_perf('mouse_abs', x, y)
         self._action.move_by_offset(x, y).perform()
-        perf.end()
+        perf.end(output)
 
     # def scroll_rel(self, x, y):
     #     '''

@@ -25,10 +25,10 @@
 
 - [x] - `click 'selector'`
 - [x] - `click n, n`
-- [ ] - `doubleclick 'selector'`
-- [ ] - `doubleclick n, n`
-- [ ] - `rightclick 'selector'`
-- [ ] - `rightclick n, n`
+- [x] - `doubleclick 'selector'`
+- [x] - `doubleclick n, n`
+- [x] - `rightclick 'selector'`
+- [x] - `rightclick n, n`
 - [x] - `mouse 'selector'`
 - [x] - `mouse n, n`
 - [x] - `scroll 'selector'`
