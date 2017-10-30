@@ -23,8 +23,8 @@
 
 ## Mouse
 
-- [ ] - `click 'selector'`
-- [ ] - `click n, n`
+- [x] - `click 'selector'`
+- [x] - `click n, n`
 - [ ] - `doubleclick 'selector'`
 - [ ] - `doubleclick n, n`
 - [ ] - `rightclick 'selector'`

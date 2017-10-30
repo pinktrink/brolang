@@ -888,6 +888,8 @@ class Bro():
         '''
 
         perf = self._get_perf('click_sel', sel)
+        el = self._get_element(sel)
+        self._action.click(el).perform()
         perf.end()
 
     def click_abs(self, x, y):
@@ -896,6 +898,8 @@ class Bro():
         '''
 
         perf = self._get_perf('click_abs', x, y)
+        self.mouse_abs(x, y)
+        self._action.click().perform()
         perf.end()
 
     # def mouse_rel(self, x, y):
