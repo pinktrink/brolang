@@ -62,3 +62,8 @@
 - [ ] - `assert 'selector' style x is /gre/p`
 - [ ] - `assert (any|all|each) 'selector' attribute x is /gre/p`
 - [ ] - `assert cookie x is /gre/p`
+
+## Miscellaneous
+
+- [ ] - Support for running from stdin
+- [ ] - REPL
