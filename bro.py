@@ -276,24 +276,21 @@ class BroLang():
         Define the click grammar.
         '''
 
-        click = CaselessKeyword('click')
-        return self._positional_statement(click)
+        return self._positional_statement(self.click_kw)
 
     def mouse(self):
         '''
         Define the mouse grammar.
         '''
 
-        mouse = CaselessKeyword('mouse')
-        return self._positional_statement(mouse)
+        return self._positional_statement(self.mouse_kw)
 
     def scroll(self):
         '''
         Define the scroll grammar.
         '''
 
-        scroll = CaselessKeyword('scroll')
-        return self._positional_statement(scroll)
+        return self._positional_statement(self.scroll_kw)
 
 
 class BroPerf():
