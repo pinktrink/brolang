@@ -31,8 +31,8 @@
 - [ ] - `rightclick n, n`
 - [x] - `mouse 'selector'`
 - [x] - `mouse n, n`
-- [ ] - `scroll 'selector'`
-- [ ] - `scroll n, n`
+- [x] - `scroll 'selector'`
+- [x] - `scroll n, n`
 - [ ] - `drag 'selector' to 'selector'`
 - [ ] - `drag 'selector' to n, n`
 - [ ] - `drag n, n to 'selector'`

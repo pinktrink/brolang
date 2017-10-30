@@ -67,6 +67,10 @@ def negateUnit(unit):
     return -unit
 
 
+class JSException(Exception):
+    pass
+
+
 # class CSSUnit():
 #     '''
 #     Allows for storage and conversion of CSS units.
@@ -871,6 +875,21 @@ class Bro():
 
         return content
 
+    def _executeJS(self, name, *args):
+        with open('js/wrap.js') as f:
+            wrap = f.read()
+
+        try:
+            with open('js/' + name) as f:
+                if len(args):
+                    code = wrap.format(f.read().format(*args))
+                    self._browser.execute_script(code)
+                else:
+                    code = wrap.format(f.read())
+                    self._browser.execute_script(code)
+        except WebDriverException as e:
+            raise JSException
+
     # def _get_cursor_position(self):
     #     pass
 
@@ -943,6 +962,8 @@ class Bro():
         '''
 
         perf = self._get_perf('scroll_sel', sel)
+        loc = self._get_element(sel).location_once_scrolled_into_view
+        self._executeJS('scroll.js', loc['x'], loc['y'])
         perf.end()
 
     def scroll_abs(self, x, y):
@@ -951,6 +972,7 @@ class Bro():
         '''
 
         perf = self._get_perf('scroll_abs', x, y)
+        self._executeJS('scroll.js', x, y)
         perf.end()
 
 
