@@ -65,5 +65,5 @@
 
 ## Miscellaneous
 
-- [ ] - Support for running from stdin
-- [ ] - REPL
+- [x] - Support for running from stdin
+- [x] - REPL

@@ -1046,6 +1046,23 @@ class Bro():
         perf.end()
 
 
+def loop(prompt, browsers):
+    print(prompt, end='', flush=True)
+
+    try:
+        for line in sys.stdin:
+            try:
+                for stmt in BroLang().bnf().parseString(line):
+                    for browser in browsers:
+                        browser.execute(stmt)
+            except:
+                print('Unable to parse input.')
+
+            print(prompt, end='', flush=True)
+    except KeyboardInterrupt:
+        sys.exit()
+
+
 if __name__ == '__main__':
     # I would create a `BroCLI` class that encapsulates all
     # the argparse, output file handling, and sys.exiting
@@ -1053,7 +1070,7 @@ if __name__ == '__main__':
     # frameworks if you're into that
 
     ap = argparse.ArgumentParser()
-    ap.add_argument('file', help='The file to run.')
+    ap.add_argument('file', nargs='?', help='The file to run.')
     ap.add_argument(
         '-q',
         '--quiet',
@@ -1129,9 +1146,15 @@ if __name__ == '__main__':
         Bro.create(b, args.user_agent, args.private) for b in build_browsers
     ]
 
-    for stmt in BroLang().bnf().parseFile(args.file):
-        for browser in browsers:
-            browser.execute(stmt)
+    if args.file:
+        for stmt in BroLang().bnf().parseFile(args.file):
+            for browser in browsers:
+                browser.execute(stmt)
+    else:
+        if sys.stdin.isatty():
+            loop('> ', browsers)
+        else:
+            loop('', browsers)
 
     if output_file:
         output_fh.close()
