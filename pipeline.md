@@ -8,7 +8,7 @@
 - [x] - `back n`
 - [x] - `forward`
 - [x] - `forward n`
-- [ ] - `refresh`
+- [x] - `refresh`
 - [ ] - `clear cache`
 - [ ] - `clear storage`
 - [ ] - `clear cookies`

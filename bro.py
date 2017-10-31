@@ -181,6 +181,7 @@ class BroLang():
     scroll_kw = CaselessKeyword('scroll')
     back_kw = CaselessKeyword('back')
     forward_kw = CaselessKeyword('forward')
+    refresh_kw = CaselessKeyword('refresh')
     assert_kw = CaselessKeyword('assert')
 
     present_kw = CaselessKeyword('present')
@@ -202,6 +203,7 @@ class BroLang():
 
     back_expr = Group(back_kw + Optional(pos_int))
     forward_expr = Group(forward_kw + Optional(pos_int))
+    refresh_expr = Group(refresh_kw)
 
     assert_content = CaselessKeyword('content')
     assert_in = CaselessKeyword('in')
@@ -249,6 +251,7 @@ class BroLang():
             self.wait_expr + Optional(self.comment).suppress() |
             self.back_expr + Optional(self.comment).suppress() |
             self.forward_expr + Optional(self.comment).suppress() |
+            self.refresh_expr + Optional(self.comment).suppress() |
             self.assert_expr + Optional(self.comment).suppress() |
             self.click() + Optional(self.comment).suppress() |
             self.mouse() + Optional(self.comment).suppress() |
@@ -624,6 +627,11 @@ class Bro():
         perf = self._get_perf('forward', int(num))
         for i in range(int(num)):
             self._browser.forward()
+        perf.end()
+
+    def refresh(self):
+        perf = self._get_perf('refresh')
+        self._browser.refresh()
         perf.end()
 
     def _reduce_regex_args(self, regex):
