@@ -33,10 +33,10 @@
 - [x] - `mouse n, n`
 - [x] - `scroll 'selector'`
 - [x] - `scroll n, n`
-- [ ] - `drag 'selector' to 'selector'`
-- [ ] - `drag 'selector' to n, n`
-- [ ] - `drag n, n to 'selector'`
-- [ ] - `drag n, n to n, n`
+- [x] - `drag 'selector' to 'selector'`
+- [x] - `drag 'selector' to n, n`
+- [x] - `drag n, n to 'selector'`
+- [x] - `drag n, n to n, n`
 
 ## Keyboard
 

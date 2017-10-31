@@ -180,6 +180,7 @@ class BroLang():
     rclick_kw = CaselessKeyword('rightclick')
     mouse_kw = CaselessKeyword('mouse')
     scroll_kw = CaselessKeyword('scroll')
+    drag_kw = CaselessKeyword('drag')
     back_kw = CaselessKeyword('back')
     forward_kw = CaselessKeyword('forward')
     refresh_kw = CaselessKeyword('refresh')
@@ -208,6 +209,12 @@ class BroLang():
         Optional(wait_max + pos_number)
     )
     wait_expr = Group(wait_kw + (pos_number | wait_until_expr))
+
+    drag_to = CaselessKeyword('to')
+    drag_expr = Group(
+        drag_kw + (select_expr | pos_coords) + drag_to +
+        (select_expr | pos_coords)
+    )
 
     back_expr = Group(back_kw + Optional(pos_int))
     forward_expr = Group(forward_kw + Optional(pos_int))
@@ -258,6 +265,7 @@ class BroLang():
             self.goto_expr + Optional(self.comment).suppress() |
             self.clear_expr + Optional(self.comment).suppress() |
             self.wait_expr + Optional(self.comment).suppress() |
+            self.drag_expr + Optional(self.comment).suppress() |
             self.back_expr + Optional(self.comment).suppress() |
             self.forward_expr + Optional(self.comment).suppress() |
             self.refresh_expr + Optional(self.comment).suppress() |
@@ -999,7 +1007,7 @@ class Bro():
     #     start = timeit.default_timer()
     #     self._print_perf_info('mouse_rel', start, x, y)
 
-    def mouse_sel(self, sel):
+    def mouse_sel(self, sel, output=True):
         '''
         Execute a selector mouse statement.
         '''
@@ -1007,7 +1015,7 @@ class Bro():
         perf = self._get_perf('mouse_sel', sel)
         el = self._get_element(sel)
         self._action.move_to_element(el).perform()
-        perf.end()
+        perf.end(output)
 
     def mouse_abs(self, x, y, output=True):
         '''
@@ -1044,6 +1052,35 @@ class Bro():
         perf = self._get_perf('scroll_abs', x, y)
         self._executeJS('scroll.js', x, y)
         perf.end()
+
+    def drag(self, fr, _, to):
+        if isinstance(fr, CSSSelector):
+            if isinstance(to, CSSSelector):
+                perf = self._get_perf('drag', fr, _, to)
+                self._action.drag_and_drop(
+                    self._get_element(fr),
+                    self._get_element(to),
+                ).perform()
+            else:
+                to = to.asList()
+                perf = self._get_perf('drag', fr, _, to[0], to[1])
+                self._action.click_and_hold(self._get_element(fr))
+                self.mouse_abs(to[0], to[1], False)
+                self._action.release().perform()
+        else:
+            fr = fr.asList()
+            self.mouse_abs(fr[0], fr[1], False)
+            self._action.click_and_hold()
+            if isinstance(to, CSSSelector):
+                perf = self._get_perf('drag', fr[0], fr[1], _, to)
+                self.mouse_sel(to, False)
+            else:
+                to = to.asList()
+                perf = self._get_perf('drag', fr[0], fr[1], _, to[0], to[1])
+                self.mouse_abs(to[0], to[1], False)
+            self._action.release().perform()
+        perf.end()
+
 
 
 def loop(prompt, browsers):
