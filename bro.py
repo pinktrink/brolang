@@ -173,6 +173,7 @@ class BroLang():
 
     screen_kw = CaselessKeyword('screen')
     goto_kw = CaselessKeyword('goto')
+    clear_kw = CaselessKeyword('clear')
     wait_kw = CaselessKeyword('wait')
     click_kw = CaselessKeyword('click')
     dblclick_kw = CaselessKeyword('doubleclick')
@@ -192,6 +193,13 @@ class BroLang():
     screen_expr = Group(screen_kw + screen_size_expr)
 
     goto_expr = Group(goto_kw + qstring)
+
+    clear_cache = CaselessKeyword('cache')
+    clear_storage = CaselessKeyword('storage')
+    clear_cookies = CaselessKeyword('cookies')
+    clear_expr = Group(clear_kw + (
+        clear_cache | clear_storage | clear_cookies
+    ))
 
     wait_until = CaselessKeyword('until')
     wait_max = CaselessKeyword('max')
@@ -248,6 +256,7 @@ class BroLang():
             self.comment.suppress() |
             self.screen_expr + Optional(self.comment).suppress() |
             self.goto_expr + Optional(self.comment).suppress() |
+            self.clear_expr + Optional(self.comment).suppress() |
             self.wait_expr + Optional(self.comment).suppress() |
             self.back_expr + Optional(self.comment).suppress() |
             self.forward_expr + Optional(self.comment).suppress() |
@@ -607,6 +616,18 @@ class Bro():
 
         perf = self._get_perf('goto', href)
         self._browser.get(href)
+        perf.end()
+
+    def clear(self, what):
+        perf = self._get_perf('clear', what)
+
+        if what == 'cache':
+            self._executeJS('clearCache.js')
+        elif what == 'storage':
+            self._executeJS('clearStorage.js')
+        elif what == 'cookies':
+            self._browser.delete_all_cookies()
+
         perf.end()
 
     def back(self, num=1):

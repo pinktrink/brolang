@@ -9,9 +9,9 @@
 - [x] - `forward`
 - [x] - `forward n`
 - [x] - `refresh`
-- [ ] - `clear cache`
-- [ ] - `clear storage`
-- [ ] - `clear cookies`
+- [x] - `clear cache`
+- [x] - `clear storage`
+- [x] - `clear cookies`
 
 ## Waiting
 
