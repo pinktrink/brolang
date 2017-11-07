@@ -300,6 +300,10 @@ class BroLang():
 
         return self._positional_statement(
             self.click_kw | self.dblclick_kw | self.rclick_kw
+        ) | (
+            Group(self.click_kw) |
+            Group(self.dblclick_kw) |
+            Group(self.rclick_kw)
         )
 
     def mouse(self):
@@ -501,7 +505,9 @@ class Bro():
         relative, a selector, or absolute.
         '''
 
-        if args[0] == '+':
+        if not args:
+            getattr(self, 'only_' + action)()
+        elif args[0] == '+':
             getattr(self, action + '_rel')(*args[1])
         elif args[0] == '-':
             getattr(self, action + '_rel')(*map(negateUnit, args[1:][0]))
@@ -527,6 +533,8 @@ class Bro():
 
         if self._failed:
             return
+
+        t = t.asList()
 
         action, args = (t[0], t[1:])
 
@@ -716,7 +724,7 @@ class Bro():
 
         if assert_type == 'content':
             start = timeit.default_timer()
-            args = self._reduce_regex_args(t[0].asList())
+            args = self._reduce_regex_args(t[0])
             kwargs = {}
             res = None
 
@@ -735,7 +743,7 @@ class Bro():
 
             self._print_perf_info(
                 'assert content ' + '/' + args[0] + '/' + ''.join(
-                    t[0].asList()[1]
+                    t[0][1]
                 ),
                 start,
                 t[1] + (' in ' + str(kwargs['in_el']) if kwargs else ''),
@@ -743,7 +751,7 @@ class Bro():
             )
         elif assert_type == 'source':
             start = timeit.default_timer()
-            args = self._reduce_regex_args(t[0].asList())
+            args = self._reduce_regex_args(t[0])
 
             if t[1] == 'present':
                 res = self.assert_source_present(*args)
@@ -751,7 +759,7 @@ class Bro():
                 res = self.assert_source_absent(*args)
 
             self._print_perf_info(
-                'assert source /' + args[0] + '/' + ''.join(t[0].asList()[1]),
+                'assert source /' + args[0] + '/' + ''.join(t[0][1]),
                 start,
                 t[1],
                 MESSAGE_PASSED if res is True else MESSAGE_FAILED
@@ -931,6 +939,15 @@ class Bro():
     # def _get_cursor_position(self):
     #     pass
 
+    def only_click(self):
+        '''
+        Execute a click statement.
+        '''
+
+        perf = self._get_perf('click')
+        self._action.click().perform()
+        perf.end()
+
     def click_rel(self, x, y):
         '''
         Execute a relative click statement.
@@ -961,6 +978,15 @@ class Bro():
         self._action.click().perform()
         perf.end()
 
+    def only_doubleclick(self):
+        '''
+        Execute a doubleclick statement.
+        '''
+
+        perf = self._get_perf('doubleclick')
+        self._action.double_click().perform()
+        perf.end()
+
     def doubleclick_rel(self, x, y):
         '''
         Execute a relative doubleclick statement.
@@ -989,6 +1015,15 @@ class Bro():
         perf = self._get_perf('doubleclick_abs', x, y)
         self.mouse_abs(x, y, False)
         self._action.double_click().perform()
+        perf.end()
+
+    def only_rightclick(self):
+        '''
+        Execute a rightclick statement.
+        '''
+
+        perf = self._get_perf('rightclick')
+        self._action.context_click().perform()
         perf.end()
 
     def rightclick_rel(self, x, y):
@@ -1088,20 +1123,17 @@ class Bro():
                     self._get_element(to),
                 ).perform()
             else:
-                to = to.asList()
                 perf = self._get_perf('drag', fr, _, to[0], to[1])
                 self._action.click_and_hold(self._get_element(fr))
                 self.mouse_abs(to[0], to[1], False)
                 self._action.release().perform()
         else:
-            fr = fr.asList()
             self.mouse_abs(fr[0], fr[1], False)
             self._action.click_and_hold()
             if isinstance(to, CSSSelector):
                 perf = self._get_perf('drag', fr[0], fr[1], _, to)
                 self.mouse_sel(to, False)
             else:
-                to = to.asList()
                 perf = self._get_perf('drag', fr[0], fr[1], _, to[0], to[1])
                 self.mouse_abs(to[0], to[1], False)
             self._action.release().perform()
