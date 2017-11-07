@@ -1,4 +1,4 @@
-(function() {{
+return (function() {{
     window._brolang_error = {{
         error: false,
         exceptionType: '',

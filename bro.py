@@ -1023,7 +1023,9 @@ class Bro():
         '''
 
         perf = self._get_perf('mouse_abs', x, y)
-        self._action.move_by_offset(x, y).perform()
+        el_id = self._executeJS('mouseAbs.js', x, y)
+        el = self._get_element(CSSSelector('#' + el_id))
+        self._action.move_to_element(el).perform()
         perf.end(output)
 
     # def scroll_rel(self, x, y):
