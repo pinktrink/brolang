@@ -25,14 +25,19 @@
 
 - [x] - `click 'selector'`
 - [x] - `click n, n`
+- [x] - `click (+|-) n, n`
 - [x] - `doubleclick 'selector'`
 - [x] - `doubleclick n, n`
+- [x] - `doubleclick (+|-) n, n`
 - [x] - `rightclick 'selector'`
 - [x] - `rightclick n, n`
+- [x] - `rightclick (+|-) n, n`
 - [x] - `mouse 'selector'`
 - [x] - `mouse n, n`
+- [x] - `mouse (+|-) n, n`
 - [x] - `scroll 'selector'`
 - [x] - `scroll n, n`
+- [x] - `scroll (+|-) n, n`
 - [x] - `drag 'selector' to 'selector'`
 - [x] - `drag 'selector' to n, n`
 - [x] - `drag n, n to 'selector'`

@@ -288,10 +288,10 @@ class BroLang():
         '''
 
         abs_expr = Group(kw + self.pos_coords)
-        # rel_expr = Group(kw + self.plus_minus + self.coords)
+        rel_expr = Group(kw + self.plus_minus + self.coords)
         sel_expr = Group(kw + self.select_expr)
 
-        return abs_expr | sel_expr
+        return abs_expr | rel_expr | sel_expr
 
     def click(self):
         '''
@@ -501,11 +501,11 @@ class Bro():
         relative, a selector, or absolute.
         '''
 
-        # if args[0] == '+':
-        #     getattr(self, action + '_rel')(*args[1])
-        # elif args[0] == '-':
-        #     getattr(self, action + '_rel')(*map(negateUnit, args[1:][0]))
-        if isinstance(args[0], CSSSelector):
+        if args[0] == '+':
+            getattr(self, action + '_rel')(*args[1])
+        elif args[0] == '-':
+            getattr(self, action + '_rel')(*map(negateUnit, args[1:][0]))
+        elif isinstance(args[0], CSSSelector):
             getattr(self, action + '_sel')(args[0])
         # elif isinstance(args[0][0], CSSUnit):
         else:
@@ -931,13 +931,15 @@ class Bro():
     # def _get_cursor_position(self):
     #     pass
 
-    # def click_rel(self, x, y):
-    #     '''
-    #     Execute a relative click statement.
-    #     '''
+    def click_rel(self, x, y):
+        '''
+        Execute a relative click statement.
+        '''
 
-    #     start = timeit.default_timer()
-    #     self._print_perf_info('click_rel', start, x, y)
+        perf = self._get_perf('click_rel', x, y)
+        self.mouse_rel(x, y, False)
+        self._action.click().perform()
+        perf.end()
 
     def click_sel(self, sel):
         '''
@@ -957,6 +959,16 @@ class Bro():
         perf = self._get_perf('click_abs', x, y)
         self.mouse_abs(x, y, False)
         self._action.click().perform()
+        perf.end()
+
+    def doubleclick_rel(self, x, y):
+        '''
+        Execute a relative doubleclick statement.
+        '''
+
+        perf = self._get_perf('doubleclick_rel', x, y)
+        self.mouse_rel(x, y, False)
+        self._action.double_click().perform()
         perf.end()
 
     def doubleclick_sel(self, sel):
@@ -979,6 +991,16 @@ class Bro():
         self._action.double_click().perform()
         perf.end()
 
+    def rightclick_rel(self, x, y):
+        '''
+        Execute a relative rightclick statement.
+        '''
+
+        perf = self._get_perf('rightclick_rel', x, y)
+        self.mouse_rel(x, y, False)
+        self._action.context_click().perform()
+        perf.end()
+
     def rightclick_sel(self, sel):
         '''
         Execute a selector rightclick statement.
@@ -999,13 +1021,14 @@ class Bro():
         self._action.context_click().perform()
         perf.end()
 
-    # def mouse_rel(self, x, y):
-    #     '''
-    #     Execute a relative mouse statement.
-    #     '''
+    def mouse_rel(self, x, y, output=True):
+        '''
+        Execute a relative mouse statement.
+        '''
 
-    #     start = timeit.default_timer()
-    #     self._print_perf_info('mouse_rel', start, x, y)
+        perf = self._get_perf('mouse_rel', x, y)
+        self._action.move_by_offset(x, y).perform()
+        perf.end(output)
 
     def mouse_sel(self, sel, output=True):
         '''
@@ -1028,13 +1051,14 @@ class Bro():
         self._action.move_to_element(el).perform()
         perf.end(output)
 
-    # def scroll_rel(self, x, y):
-    #     '''
-    #     Execute a relative scroll statement.
-    #     '''
+    def scroll_rel(self, x, y):
+        '''
+        Execute a relative scroll statement.
+        '''
 
-    #     start = timeit.default_timer()
-    #     self._print_perf_info('scroll_rel', start, x, y)
+        perf = self._get_perf('scroll_rel', x, y)
+        self._executeJS('scrollRel.js', x, y)
+        perf.end()
 
     def scroll_sel(self, sel):
         '''
