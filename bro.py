@@ -554,6 +554,21 @@ class Bro():
         else:
             self._print_info('Unknown action:', action)
 
+    def _executeJS(self, name, *args):
+        with open('js/wrap.js') as f:
+            wrap = f.read()
+
+        try:
+            with open('js/' + name) as f:
+                if len(args):
+                    code = wrap.format(f.read().format(*args))
+                    return self._browser.execute_script(code)
+                else:
+                    code = wrap.format(f.read())
+                    return self._browser.execute_script(code)
+        except WebDriverException as e:
+            raise JSException
+
     def screen(self, *t):
         '''
         Execute a screen statement.
@@ -912,21 +927,6 @@ class Bro():
                 content += el
 
         return content
-
-    def _executeJS(self, name, *args):
-        with open('js/wrap.js') as f:
-            wrap = f.read()
-
-        try:
-            with open('js/' + name) as f:
-                if len(args):
-                    code = wrap.format(f.read().format(*args))
-                    self._browser.execute_script(code)
-                else:
-                    code = wrap.format(f.read())
-                    self._browser.execute_script(code)
-        except WebDriverException as e:
-            raise JSException
 
     # def _get_cursor_position(self):
     #     pass
