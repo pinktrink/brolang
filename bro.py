@@ -349,7 +349,7 @@ class BroPerf():
 
         self._out_method(
             '{action} :: ({time:f} sec)'.format(
-                action=self._action,
+                action=self._action.strip(),
                 time=self._end_time - self._start_time
             )
         )
@@ -955,7 +955,7 @@ class Bro():
         '''
 
         perf = self._get_perf('click_abs', x, y)
-        self.mouse_abs(x, y)
+        self.mouse_abs(x, y, False)
         self._action.click().perform()
         perf.end()
 
