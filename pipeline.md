@@ -45,6 +45,8 @@
 - [x] - `drag 'selector' to n, n`
 - [x] - `drag n, n to 'selector'`
 - [x] - `drag n, n to n, n`
+- [ ] - `drag 'selector' (+|-) n, n`
+- [ ] - `drag n, n (+|-) n, n`
 
 ## Keyboard
 
@@ -53,6 +55,12 @@
 - [x] - `release x`
 - [ ] - `type something`
 
+## Alerts
+- [ ] - `accept`
+- [ ] - `dismiss`
+- [ ] - `input something`
+- [ ] - `authenticate 'user' 'pass'`
+
 ## Assertions
 
 - [x] - `assert content /gre/p (present|absent)`
@@ -60,6 +68,7 @@
 - [ ] - `assert content /gre/p (absent|present) in (any|all|each) 'selector'`
 - [x] - `assert source /gre/p (pressent|absent)`
 - [x] - `assert alert (present|absent)`
+- [ ] - `assert alert text /gre/p`
 - [ ] - `assert more than n 'selector'`
 - [ ] - `assert less than n 'selector'`
 - [ ] - `assert n 'selector'`
@@ -70,6 +79,7 @@
 - [ ] - `assert 'selector' style x is /gre/p`
 - [ ] - `assert (any|all|each) 'selector' attribute x is /gre/p`
 - [ ] - `assert cookie x is /gre/p`
+- [ ] - `assert url http://www.example.com`
 
 ## Miscellaneous
 
