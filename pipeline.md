@@ -48,9 +48,9 @@
 
 ## Keyboard
 
-- [ ] - `press x`
-- [ ] - `hold x`
-- [ ] - `release x`
+- [x] - `press x`
+- [x] - `hold x`
+- [x] - `release x`
 - [ ] - `type something`
 
 ## Assertions

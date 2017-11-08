@@ -31,6 +31,7 @@ from pyparsing import (
     alphanums
 )
 from selenium import webdriver as wd
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support import expected_conditions
@@ -40,6 +41,41 @@ from bs4 import BeautifulSoup, NavigableString
 
 DEFAULT_BROWSER = 'Chrome'
 DEFAULT_HTML_PARSER = 'lxml'
+
+KEYMAP = {
+    '<Escape>': Keys.ESCAPE,
+    '<F1>': Keys.F1,
+    '<F2>': Keys.F2,
+    '<F3>': Keys.F3,
+    '<F4>': Keys.F4,
+    '<F5>': Keys.F5,
+    '<F6>': Keys.F6,
+    '<F7>': Keys.F7,
+    '<F8>': Keys.F8,
+    '<F9>': Keys.F9,
+    '<F10>': Keys.F10,
+    '<F11>': Keys.F11,
+    '<F12>': Keys.F12,
+    '<Pause>': Keys.PAUSE,
+    '<Backspace>': Keys.BACKSPACE,
+    '<Insert>': Keys.INSERT,
+    '<Home>': Keys.HOME,
+    '<PageUp>': Keys.PAGE_UP,
+    '<Tab>': Keys.TAB,
+    '<Enter>': Keys.ENTER,
+    '<Delete>': Keys.DELETE,
+    '<End>': Keys.END,
+    '<PageDown>': Keys.PAGE_DOWN,
+    '<Shift>': Keys.SHIFT,
+    '<Ctrl>': Keys.CONTROL,
+    '<Alt>': Keys.ALT,
+    '<Super>': Keys.COMMAND,
+    '<Space>': Keys.SPACE,
+    '<Up>': Keys.UP,
+    '<Down>': Keys.DOWN,
+    '<Left>': Keys.LEFT,
+    '<Right>': Keys.RIGHT
+}
 
 
 def convertFloat(t):
@@ -181,6 +217,9 @@ class BroLang():
     mouse_kw = CaselessKeyword('mouse')
     scroll_kw = CaselessKeyword('scroll')
     drag_kw = CaselessKeyword('drag')
+    press_kw = CaselessKeyword('press')
+    hold_kw = CaselessKeyword('hold')
+    release_kw = CaselessKeyword('release')
     back_kw = CaselessKeyword('back')
     forward_kw = CaselessKeyword('forward')
     refresh_kw = CaselessKeyword('refresh')
@@ -266,6 +305,7 @@ class BroLang():
             self.clear_expr + Optional(self.comment).suppress() |
             self.wait_expr + Optional(self.comment).suppress() |
             self.drag_expr + Optional(self.comment).suppress() |
+            self.keyboard() + Optional(self.comment).suppress() |
             self.back_expr + Optional(self.comment).suppress() |
             self.forward_expr + Optional(self.comment).suppress() |
             self.refresh_expr + Optional(self.comment).suppress() |
@@ -319,6 +359,14 @@ class BroLang():
         '''
 
         return self._positional_statement(self.scroll_kw)
+
+    def keyboard(self):
+        return Group((self.press_kw | self.hold_kw | self.release_kw) + (
+            self.generate_keys() | Word(printables, max=1)
+        ))
+
+    def generate_keys(self):
+        return functools.reduce(operator.or_, map(CaselessKeyword, KEYMAP))
 
 
 class BroPerf():
@@ -1139,6 +1187,26 @@ class Bro():
             self._action.release().perform()
         perf.end()
 
+    def _keyboard_single(self, key, fn):
+        if key[0] == '<' and key[-1] == '>':
+            fn(KEYMAP[key]).perform()
+        else:
+            fn(key).perform()
+
+    def press(self, key):
+        perf = self._get_perf('press', key)
+        self._keyboard_single(key, self._action.send_keys)
+        perf.end()
+
+    def hold(self, key):
+        perf = self._get_perf('hold', key)
+        self._keyboard_single(key, self._action.key_down)
+        perf.end()
+
+    def release(self, key):
+        perf = self._get_perf('release', key)
+        self._keyboard_single(key, self._action.key_up)
+        perf.end()
 
 
 def loop(prompt, browsers):
