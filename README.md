@@ -20,7 +20,7 @@ click 'selector'  # Click in the middle of the element represented by selector
 
 # If 'selector' returns multiple elements, an error will be raised.
 # If 'selector' returns only 1 element, that element will be used.
-# If you want to get a specific element from a selector that returns multiple elements, use the following:
+# If you want to get a specific element from a multiple-element selector, use the following:
 
 click 'selector'[0]
 
