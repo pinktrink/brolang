@@ -494,6 +494,8 @@ class Bro():
                 self._browser = self._create_browser_firefox()
             elif self._brname == 'Opera':
                 self._browser = self._create_browser_opera()
+            elif self._brname == 'Phantomjs':
+                self._browser = self._create_browser_phantomjs()
             else:
                 self._browser = self._create_browser_default()
 
@@ -539,6 +541,12 @@ class Bro():
             opts.add_argument('--user-agent=' + self._user_agent)
 
         return wd.Opera(opera_options=opts)
+
+    def _create_browser_phantomjs(self):
+        if self._user_agent:
+            self._print_info('user agent is not supported yet')
+
+        return wd.PhantomJS()
 
     def _create_browser_default(self):
         if self._private:
