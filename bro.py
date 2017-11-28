@@ -462,9 +462,6 @@ class Bro():
         self._browser.quit()
         self._exited = True
 
-    # def _inject_cursor_tracker(self):
-    #     pass
-
     def _set_browser(self):
         '''
         Set the browser, if it hasn't been set yet.
@@ -984,9 +981,6 @@ class Bro():
 
         return content
 
-    # def _get_cursor_position(self):
-    #     pass
-
     def only_click(self):
         '''
         Execute a click statement.
@@ -1284,12 +1278,6 @@ if __name__ == '__main__':
         choices=['re', 'regex'],
         default=DEFAULT_REGEX_LIB
     )
-    # ap.add_arguments(
-    #     '-s',
-    #     '--strict-mouse-tracking',
-    #     help='Use strict mouse tracking (can hurt performance).',
-    #     action='store_true'
-    # )
     args = ap.parse_args()
 
     quiet_mode = args.quiet
