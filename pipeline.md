@@ -56,9 +56,9 @@
 - [ ] - `type something`
 
 ## Alerts
-- [ ] - `accept`
-- [ ] - `dismiss`
-- [ ] - `input something`
+- [x] - `accept`
+- [x] - `dismiss`
+- [x] - `input something`
 - [ ] - `authenticate 'user' 'pass'`
 
 ## Assertions

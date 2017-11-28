@@ -32,7 +32,11 @@ from pyparsing import (
 from selenium import webdriver as wd
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.common.alert import Alert
+from selenium.common.exceptions import (
+    WebDriverException,
+    NoAlertPresentException
+)
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup, NavigableString
@@ -223,6 +227,9 @@ class BroLang():
     back_kw = CaselessKeyword('back')
     forward_kw = CaselessKeyword('forward')
     refresh_kw = CaselessKeyword('refresh')
+    accept_kw = Group(CaselessKeyword('accept'))
+    dismiss_kw = Group(CaselessKeyword('dismiss'))
+    input_kw = CaselessKeyword('input')
     assert_kw = CaselessKeyword('assert')
 
     present_kw = CaselessKeyword('present')
@@ -258,6 +265,8 @@ class BroLang():
     back_expr = Group(back_kw + Optional(pos_int))
     forward_expr = Group(forward_kw + Optional(pos_int))
     refresh_expr = Group(refresh_kw)
+
+    input_expr = Group(input_kw + qstring)
 
     assert_content = CaselessKeyword('content')
     assert_in = CaselessKeyword('in')
@@ -309,6 +318,9 @@ class BroLang():
             self.back_expr + Optional(self.comment).suppress() |
             self.forward_expr + Optional(self.comment).suppress() |
             self.refresh_expr + Optional(self.comment).suppress() |
+            self.accept_kw + Optional(self.comment).suppress() |
+            self.dismiss_kw + Optional(self.comment).suppress() |
+            self.input_expr + Optional(self.comment).suppress() |
             self.assert_expr + Optional(self.comment).suppress() |
             self.click() + Optional(self.comment).suppress() |
             self.mouse() + Optional(self.comment).suppress() |
@@ -729,6 +741,44 @@ class Bro():
     def refresh(self):
         perf = self._get_perf('refresh')
         self._browser.refresh()
+        perf.end()
+
+    def accept(self):
+        perf = self._get_perf('accept')
+        try:
+            Alert(self._browser).accept()
+        except NoAlertPresentException:
+            self._print_info(
+                'Cannot accept an alert that is not present. ' + MESSAGE_FAILED
+            )
+
+            self._clean = False
+        perf.end()
+
+    def dismiss(self):
+        perf = self._get_perf('dismiss')
+        try:
+            Alert(self._browser).dismiss()
+        except NoAlertPresentException:
+            self._print_info(
+                'Cannot dismiss an alert that is not present. ' +
+                MESSAGE_FAILED
+            )
+
+            self._clean = False
+        perf.end()
+
+    def input(self, text):
+        perf = self._get_perf('input', text)
+        try:
+            Alert(self._browser).send_keys(text)
+        except NoAlertPresentException:
+            self._print_info(
+                'Cannot input text into an alert that is not present. ' +
+                MESSAGE_FAILED
+            )
+
+            self._clean = False
         perf.end()
 
     def _reduce_regex_args(self, regex):
