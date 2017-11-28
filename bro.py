@@ -230,6 +230,7 @@ class BroLang():
     accept_kw = Group(CaselessKeyword('accept'))
     dismiss_kw = Group(CaselessKeyword('dismiss'))
     input_kw = CaselessKeyword('input')
+    auth_kw = CaselessKeyword('authenticate')
     assert_kw = CaselessKeyword('assert')
 
     present_kw = CaselessKeyword('present')
@@ -267,6 +268,8 @@ class BroLang():
     refresh_expr = Group(refresh_kw)
 
     input_expr = Group(input_kw + qstring)
+
+    auth_expr = Group(auth_kw + qstring + qstring)
 
     assert_content = CaselessKeyword('content')
     assert_in = CaselessKeyword('in')
@@ -321,6 +324,7 @@ class BroLang():
             self.accept_kw + Optional(self.comment).suppress() |
             self.dismiss_kw + Optional(self.comment).suppress() |
             self.input_expr + Optional(self.comment).suppress() |
+            self.auth_expr + Optional(self.comment).suppress() |
             self.assert_expr + Optional(self.comment).suppress() |
             self.click() + Optional(self.comment).suppress() |
             self.mouse() + Optional(self.comment).suppress() |
@@ -775,6 +779,23 @@ class Bro():
         except NoAlertPresentException:
             self._print_info(
                 'Cannot input text into an alert that is not present. ' +
+                MESSAGE_FAILED
+            )
+
+            self._clean = False
+        perf.end()
+
+    def authenticate(self, user, passwd):
+        perf = self._get_perf(
+            'input',
+            user,
+            '*******' if mask_pass else passwd
+        )
+        try:
+            Alert(self._browser).authenticate(user, passwd)
+        except NoAlertPresentException:
+            self._print_info(
+                'Cannot authenticate in an alert that is not present. ' +
                 MESSAGE_FAILED
             )
 
@@ -1328,6 +1349,12 @@ if __name__ == '__main__':
         choices=['re', 'regex'],
         default=DEFAULT_REGEX_LIB
     )
+    ap.add_argument(
+        '-s',
+        '--show-passwords',
+        help='Unmask passwords. (passwords are masked by default).',
+        action='store_true'
+    )
     args = ap.parse_args()
 
     quiet_mode = args.quiet
@@ -1335,6 +1362,7 @@ if __name__ == '__main__':
     regex_lib = args.regex_lib
     output_file = args.output
     ignore_fail = args.ignore_browser_failure
+    mask_pass = not args.show_passwords
 
     if regex_lib == 'regex':
         import regex as re

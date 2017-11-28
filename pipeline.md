@@ -59,7 +59,7 @@
 - [x] - `accept`
 - [x] - `dismiss`
 - [x] - `input something`
-- [ ] - `authenticate 'user' 'pass'`
+- [x] - `authenticate 'user' 'pass'` (no browsers seem to allow this)
 
 ## Assertions
 
