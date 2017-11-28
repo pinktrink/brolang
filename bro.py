@@ -3,7 +3,6 @@ import inspect
 import sys
 import atexit
 import timeit
-import re
 import argparse
 import functools
 import operator
@@ -41,6 +40,7 @@ from bs4 import BeautifulSoup, NavigableString
 
 DEFAULT_BROWSER = 'Chrome'
 DEFAULT_HTML_PARSER = 'lxml'
+DEFAULT_REGEX_LIB = 'regex'
 
 KEYMAP = {
     '<Escape>': Keys.ESCAPE,
@@ -1277,6 +1277,13 @@ if __name__ == '__main__':
         choices=['lxml', 'html.parser', 'html5lib'],
         default=DEFAULT_HTML_PARSER
     )
+    ap.add_argument(
+        '-r',
+        '--regex-lib',
+        help=f'Regex library to use (defaults to {DEFAULT_REGEX_LIB}).',
+        choices=['re', 'regex'],
+        default=DEFAULT_REGEX_LIB
+    )
     # ap.add_arguments(
     #     '-s',
     #     '--strict-mouse-tracking',
@@ -1287,8 +1294,14 @@ if __name__ == '__main__':
 
     quiet_mode = args.quiet
     html_parser = args.html_parser
+    regex_lib = args.regex_lib
     output_file = args.output
     ignore_fail = args.ignore_browser_failure
+
+    if regex_lib == 'regex':
+        import regex as re
+    else:
+        import re
 
     if output_file:
         quiet_mode = False

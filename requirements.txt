@@ -3,6 +3,7 @@ html5lib==0.999999999
 lxml==3.7.1
 pep8==1.7.0
 pyparsing==2.1.10
+regex==2017.11.9
 selenium==3.0.1
 six==1.10.0
 webencodings==0.5
