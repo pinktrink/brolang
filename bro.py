@@ -492,6 +492,8 @@ class Bro():
                 self._browser = self._create_browser_chrome()
             elif self._brname == 'Firefox':
                 self._browser = self._create_browser_firefox()
+            elif self._brname == 'Opera':
+                self._browser = self._create_browser_opera()
             else:
                 self._browser = self._create_browser_default()
 
@@ -517,10 +519,7 @@ class Bro():
         opts = wd.FirefoxProfile()
 
         if self._private:
-            opts.set_preference(
-                'browser.privatebrowsing.autostart',
-                True
-            )
+            opts.set_preference('browser.privatebrowsing.autostart', True)
 
         if self._user_agent is not None:
             opts.set_preference(
@@ -530,11 +529,20 @@ class Bro():
 
         return wd.Firefox(firefox_profile=opts)
 
+    def _create_browser_opera(self):
+        opts = wd.ChromeOptions()
+
+        if self._private:
+            opts.add_argument('--incognito')
+
+        if self._user_agent:
+            opts.add_argument('--user-agent=' + self._user_agent)
+
+        return wd.Opera(opera_options=opts)
+
     def _create_browser_default(self):
         if self._private:
-            self._print_info(
-                'private browsing is not supported yet'
-            )
+            self._print_info('private browsing is not supported yet')
 
         if self._user_agent:
             self._print_info('user agent is not supported yet')
