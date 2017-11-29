@@ -18,8 +18,10 @@
 - [x] - `wait n`
 - [x] - `wait until 'selector' (absent|present)`
 - [x] - `wait until 'selector' (absent|present) max n`
-- [ ] - `wait until 'selector' (visible|invisible)`
-- [ ] - `wait until 'selector' (visible|invisible) max n`
+- [x] - `wait until 'selector' (visible|invisible)`
+- [x] - `wait until 'selector' (visible|invisible) max n`
+- [x] - `wait for alert` (absent isn' supported)
+- [x] - `wait for alert max n`
 
 ## Mouse
 

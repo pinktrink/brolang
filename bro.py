@@ -238,8 +238,12 @@ class BroLang():
     auth_kw = CaselessKeyword('authenticate')
     assert_kw = CaselessKeyword('assert')
 
+    alert_kw = CaselessKeyword('alert')
+
     present_kw = CaselessKeyword('present')
     absent_kw = CaselessKeyword('absent')
+    visible_kw = CaselessKeyword('visible')
+    invisible_kw = CaselessKeyword('invisible')
 
     screen_size = CaselessKeyword('size')
     screen_size_expr = screen_size + pos_coords
@@ -256,11 +260,15 @@ class BroLang():
 
     wait_until = CaselessKeyword('until')
     wait_max = CaselessKeyword('max')
+    wait_for = CaselessKeyword('for')
     wait_until_expr = (
         wait_until + assert_select + (present_kw | absent_kw) +
         Optional(wait_max + pos_number)
     )
-    wait_expr = Group(wait_kw + (pos_number | wait_until_expr))
+    wait_for_expr = (wait_for + alert_kw)
+    wait_expr = Group(wait_kw + (
+        pos_number | wait_until_expr | wait_for_expr
+    ))
 
     drag_to = CaselessKeyword('to')
     drag_expr = Group(
@@ -300,9 +308,8 @@ class BroLang():
         (assert_element_visible | assert_element_hidden) +
         assert_select
     )
-    assert_alert = CaselessKeyword('alert')
     assert_alert_present_expr = (
-        assert_alert + (present_kw | absent_kw)
+        alert_kw + (present_kw | absent_kw)
     )
     assert_expr = Group(assert_kw + (
         assert_content_present_expr |
@@ -674,19 +681,22 @@ class Bro():
         if len(t) == 1:
             self.wait_abs(t[0])
         else:
-            # At this point, we're assuming it's a wait until statement.
-            # until 'x' (pre|ab)sent max y
-            # 1      2   3           4   5
-            timeout = -1
-            # if there is a 'max y' statement AND max is > 0
-            if len(t) == 5 and t[4] > 0:
-                timeout = t[4]
+            if t[0] == 'for':
+                self.wait_for(*t[1:])
+            else:
+                # At this point, we're assuming it's a wait until statement.
+                # until 'x' (pre|ab)sent max y
+                # 1      2   3           4   5
+                timeout = -1
+                # if there is a 'max y' statement AND max is > 0
+                if len(t) == 5 and t[4] > 0:
+                    timeout = t[4]
 
-            self.wait_until(
-                t[1],
-                t[2],
-                timeout=timeout
-            )
+                self.wait_until(
+                    t[1],
+                    t[2],
+                    timeout=timeout
+                )
 
     def wait_abs(self, sleep_time):
         perf = self._get_perf('wait', sleep_time)
@@ -705,12 +715,36 @@ class Bro():
             wdw.until(
                 lambda x: x.find_element_by_css_selector(str(sel))
             )
-        else:
+        elif presence == 'absent':
             wdw.until_not(
                 lambda x: not x.find_element_by_css_selector(str(sel))
             )
+        elif presence == 'visible':
+            wdw.until(
+                expected_conditions.visibility_of_element_located(
+                    (By.SELECTOR, str(sel))
+                )
+            )
+        else:
+            wdw.until(
+                expected_conditions.invisibility_of_element_located(
+                    (By.SELECTOR, str(sel))
+                )
+            )
 
         perf.end()
+
+    def wait_for(self, what, *cond):
+        timeout = 0
+        if cond:
+            timeout = cond[1]
+
+        wdw = WebDriverWait(self._browser, int(timeout))
+
+        if what == 'alert':
+            wdw.until(
+                expected_conditions.alert_is_present()
+            )
 
     def goto(self, href):
         '''
