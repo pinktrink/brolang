@@ -625,7 +625,7 @@ class Bro():
         try:
             action_method(*args)
         except WebDriverException as wde:
-            self._print_info('Web Driver Exception:', wde.__str__().strip())
+            self._print_info('Web Driver Exception:', str(wde).strip())
             self._fail()
 
     def _default_action(self, action, *args):
@@ -703,11 +703,11 @@ class Bro():
 
         if presence == 'present':
             wdw.until(
-                lambda x: x.find_element_by_css_selector(sel.__str__())
+                lambda x: x.find_element_by_css_selector(str(sel))
             )
         else:
             wdw.until_not(
-                lambda x: not x.find_element_by_css_selector(sel.__str__())
+                lambda x: not x.find_element_by_css_selector(str(sel))
             )
 
         perf.end()
