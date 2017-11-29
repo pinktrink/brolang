@@ -42,7 +42,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup, NavigableString
 
 
-DEFAULT_BROWSER = 'Chrome'
+DEFAULT_BROWSER = 'chrome'
 DEFAULT_HTML_PARSER = 'lxml'
 DEFAULT_REGEX_LIB = 'regex'
 
@@ -452,7 +452,7 @@ class Bro():
     def __init__(self, *, browser, user_agent, private):
         self._browser = None
         self._action = None
-        self._brname = browser[0].upper() + browser[1:].lower()
+        self._brname = browser.lower()
         self._user_agent = user_agent
         self._private = private
         self._clean = True
@@ -488,14 +488,10 @@ class Bro():
             return
 
         try:
-            if self._brname == 'Chrome':
-                self._browser = self._create_browser_chrome()
-            elif self._brname == 'Firefox':
+            if self._brname in ('chrome', 'opera'):
+                self._browser = self._create_browser_webkit()
+            elif self._brname == 'firefox':
                 self._browser = self._create_browser_firefox()
-            elif self._brname == 'Opera':
-                self._browser = self._create_browser_opera()
-            elif self._brname == 'Phantomjs':
-                self._browser = self._create_browser_phantomjs()
             else:
                 self._browser = self._create_browser_default()
 
@@ -506,7 +502,7 @@ class Bro():
             self._print_info(wde.msg)
             self._fail()
 
-    def _create_browser_chrome(self):
+    def _create_browser_webkit(self):
         opts = wd.ChromeOptions()
 
         if self._private:
@@ -515,7 +511,10 @@ class Bro():
         if self._user_agent is not None:
             opts.add_argument('--user-agent=' + self._user_agent)
 
-        return wd.Chrome(chrome_options=opts)
+        kwargs = {}
+        kwargs[self._brname + '_options'] = opts
+
+        return getattr(wd, self._brname).webdriver.WebDriver(**kwargs)
 
     def _create_browser_firefox(self):
         opts = wd.FirefoxProfile()
@@ -529,24 +528,12 @@ class Bro():
                 self._user_agent
             )
 
-        return wd.Firefox(firefox_profile=opts)
+        # HACK: Fucking selenium isn't using getattr.
+        opts.binary = None
+        opts.profile = None
+        opts.to_capabilities = lambda: []
 
-    def _create_browser_opera(self):
-        opts = wd.ChromeOptions()
-
-        if self._private:
-            opts.add_argument('--incognito')
-
-        if self._user_agent:
-            opts.add_argument('--user-agent=' + self._user_agent)
-
-        return wd.Opera(opera_options=opts)
-
-    def _create_browser_phantomjs(self):
-        if self._user_agent:
-            self._print_info('user agent is not supported yet')
-
-        return wd.PhantomJS()
+        return wd.firefox.webdriver.WebDriver(firefox_options=opts)
 
     def _create_browser_default(self):
         if self._private:
@@ -555,7 +542,7 @@ class Bro():
         if self._user_agent:
             self._print_info('user agent is not supported yet')
 
-        return getattr(wd, self._brname)()
+        return getattr(wd, self._brname).webdriver.WebDriver()
 
     def _print_info(self, *args):
         # quiet_mode, output_file, and output_fh are defined down below in the
