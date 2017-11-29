@@ -40,6 +40,10 @@ from selenium.common.exceptions import (
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup, NavigableString
+from colorama import init
+
+
+init()
 
 
 DEFAULT_BROWSER = 'chrome'
