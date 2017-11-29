@@ -224,6 +224,7 @@ class BroLang():
     press_kw = CaselessKeyword('press')
     hold_kw = CaselessKeyword('hold')
     release_kw = CaselessKeyword('release')
+    type_kw = CaselessKeyword('type')
     back_kw = CaselessKeyword('back')
     forward_kw = CaselessKeyword('forward')
     refresh_kw = CaselessKeyword('refresh')
@@ -262,6 +263,8 @@ class BroLang():
         drag_kw + (select_expr | pos_coords) + drag_to +
         (select_expr | pos_coords)
     )
+
+    type_expr = Group(type_kw + qstring)
 
     back_expr = Group(back_kw + Optional(pos_int))
     forward_expr = Group(forward_kw + Optional(pos_int))
@@ -318,6 +321,7 @@ class BroLang():
             self.wait_expr + Optional(self.comment).suppress() |
             self.drag_expr + Optional(self.comment).suppress() |
             self.keyboard() + Optional(self.comment).suppress() |
+            self.type_expr + Optional(self.comment).suppress() |
             self.back_expr + Optional(self.comment).suppress() |
             self.forward_expr + Optional(self.comment).suppress() |
             self.refresh_expr + Optional(self.comment).suppress() |
@@ -1274,6 +1278,11 @@ class Bro():
     def release(self, key):
         perf = self._get_perf('release', key)
         self._keyboard_single(key, self._action.key_up)
+        perf.end()
+
+    def type(self, text):
+        perf = self._get_perf('type', text)
+        self._action.send_keys(text)
         perf.end()
 
 

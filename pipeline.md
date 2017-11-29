@@ -53,7 +53,7 @@
 - [x] - `press x`
 - [x] - `hold x`
 - [x] - `release x`
-- [ ] - `type something`
+- [x] - `type 'something'`
 
 ## Alerts
 - [x] - `accept`
