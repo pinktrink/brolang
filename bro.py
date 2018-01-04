@@ -526,6 +526,9 @@ class Bro():
         if self._user_agent is not None:
             opts.add_argument('--user-agent=' + self._user_agent)
 
+        if self._brname == 'chrome' and chrome_bin:
+            opts.binary_location = chrome_bin
+
         kwargs = {}
         kwargs[self._brname + '_options'] = opts
 
@@ -1405,6 +1408,10 @@ if __name__ == '__main__':
         help='Unmask passwords. (passwords are masked by default).',
         action='store_true'
     )
+    ap.add_argument(
+        '--chrome-binary',
+        help="Specify the Chrome binary."
+    )
     args = ap.parse_args()
 
     quiet_mode = args.quiet
@@ -1413,6 +1420,7 @@ if __name__ == '__main__':
     output_file = args.output
     ignore_fail = args.ignore_browser_failure
     mask_pass = not args.show_passwords
+    chrome_bin = args.chrome_binary
 
     if regex_lib == 'regex':
         import regex as re
