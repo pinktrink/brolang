@@ -168,7 +168,7 @@ class CSSSelector():
 
 class BroLang():
     '''
-    Define the overall langauge that will be used to represent browser
+    Define the overall language that will be used to represent browser
     control logic.
     Thanks to pyparsing this is defined in a pseudo Backus-Naur form.
     We split each instruction into its own array for easier parsing by
@@ -834,6 +834,8 @@ class Bro():
         perf.end()
 
     def authenticate(self, user, passwd):
+        # TODO: No browsers allow this because you have to put it in the URL ya
+        # dingus.
         perf = self._get_perf(
             'input',
             user,
@@ -1405,7 +1407,7 @@ if __name__ == '__main__':
     ap.add_argument(
         '-s',
         '--show-passwords',
-        help='Unmask passwords. (passwords are masked by default).',
+        help='Unmask passwords (passwords are masked by default).',
         action='store_true'
     )
     ap.add_argument(
